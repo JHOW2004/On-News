@@ -1,226 +1,317 @@
 import os
 
-# 1. Backend (api/news.js)
-# Correção: Usa a API URL moderna (remove o aviso de Deprecation) e garante limpeza dos parametros
-api_news_content = """
-export default async function handler(req, res) {
-  // Configuração de CORS para permitir que seu front acesse
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+# 1. Criar o componente de Prompt de Instalação
+install_prompt_content = """
+import React, { useEffect, useState } from 'react';
+import { X, Download, Share } from 'lucide-react';
 
-  // Trata pre-flight requests
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+const InstallPrompt: React.FC = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
-  const apiKey = process.env.VITE_GNEWS_API_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: 'API Key not configured on server' });
-  }
-
-  try {
-    // Usa a API URL moderna para parsear a requisição (Evita o aviso DEP0169)
-    // req.url vem apenas como o path relativo na Vercel (ex: /?category=business)
-    const requestUrl = new URL(req.url, `http://${req.headers.host}`);
-    const params = new URLSearchParams(requestUrl.searchParams);
-
-    // Extrai o endpoint e remove ele dos parametros que irão para a NewsAPI
-    const endpoint = params.get('endpoint') || 'everything';
-    params.delete('endpoint');
-
-    // Adiciona a API Key
-    params.append('apiKey', apiKey);
-
-    // URL final para a NewsAPI
-    const externalUrl = `https://newsapi.org/v2/${endpoint}?${params.toString()}`;
-
-    const response = await fetch(externalUrl);
-    const data = await response.json();
-
-    if (!response.ok) {
-        // Repassa o erro da NewsAPI para o frontend entender o que houve
-        return res.status(response.status).json(data);
+  useEffect(() => {
+    // Detecta se é iOS
+    const isIosDevice = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    if (isIosDevice && !isStandalone) {
+      setIsIOS(true);
+      // No iOS mostramos apenas uma vez por sessão para não ser intrusivo demais, 
+      // ou removemos essa checagem se quiser mostrar SEMPRE.
+      const hasSeenPrompt = sessionStorage.getItem('iosPromptSeen');
+      if (!hasSeenPrompt) {
+        setShowPrompt(true);
+        sessionStorage.setItem('iosPromptSeen', 'true');
+      }
     }
 
-    // Cache de 1 hora na Vercel
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
+    // Detecta Android/Desktop (Chrome/Edge)
+    const handleBeforeInstallPrompt = (e: any) => {
+      // Impede o mini-infobar padrão do Chrome
+      e.preventDefault();
+      // Guarda o evento para acionar depois
+      setDeferredPrompt(e);
+      // Mostra nosso componente
+      setShowPrompt(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    // Mostra o prompt nativo do navegador
+    deferredPrompt.prompt();
+
+    // Espera a escolha do usuário
+    const { outcome } = await deferredPrompt.userChoice;
     
-    return res.status(200).json(data);
-  } catch (error) {
-    console.error("Serverless Error:", error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-}
-"""
-
-# 2. Frontend (src/lib/gnews.ts)
-# Correção: Garante que 'endpoint' seja removido corretamente do objeto antes de virar string
-gnews_frontend_content = """
-// src/lib/gnews.ts
-
-const NEWS_API_KEY = import.meta.env.VITE_GNEWS_API_KEY || "";
-const IS_DEV = import.meta.env.DEV;
-
-export interface NewsArticle {
-  id: string;
-  title: string;
-  description: string;
-  content: string;
-  url: string;
-  image: string;
-  publishedAt: string;
-  lang?: string;
-  source: {
-    id: string | null;
-    name: string;
+    if (outcome === 'accepted') {
+      setShowPrompt(false);
+    }
+    
+    setDeferredPrompt(null);
   };
-}
 
-export interface NewsResponse {
-  totalArticles: number;
-  articles: NewsArticle[];
-}
+  const handleClose = () => {
+    setShowPrompt(false);
+  };
 
-const newsApiCategoryMap: Record<string, string> = {
-  financas: "business",
-  saude: "health",
-  educacao: "general",
-  esportes: "sports",
-  ciencias: "science",
-  tecnologia: "technology",
+  if (!showPrompt) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-slide-up">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 max-w-md mx-auto relative">
+        <button 
+          onClick={handleClose}
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <img src="/pwa-192x192.png" alt="OnNews" className="w-12 h-12 rounded-lg shadow-sm" />
+          </div>
+          
+          <div className="flex-1">
+            <h3 className="font-bold text-gray-900 dark:text-white">Instalar OnNews</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+              {isIOS 
+                ? "Instale este aplicativo na sua tela inicial para uma melhor experiência."
+                : "Adicione à sua tela inicial para acessar notícias em tempo real, mesmo offline."}
+            </p>
+
+            {isIOS ? (
+              <div className="mt-3 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                <p className="flex items-center gap-2 mb-1">
+                  1. Toque no botão <Share className="w-4 h-4 text-blue-500" /> Compartilhar
+                </p>
+                <p>2. Selecione "Adicionar à Tela de Início"</p>
+              </div>
+            ) : (
+              <button
+                onClick={handleInstallClick}
+                className="mt-3 w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span>Instalar Agora</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-// ---- Helper de Transformação ----
-function transformNewsApiResponse(data: any): NewsResponse {
-  if (!data || !Array.isArray(data.articles)) {
-    // Se a API retornar erro, logamos para debug
-    if (data?.status === 'error') {
-        console.error("NewsAPI Error:", data.message);
+export default InstallPrompt;
+"""
+
+# 2. Atualizar o App.tsx para incluir o componente
+app_content = """
+import React, { useState } from 'react';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { useAuth } from './contexts/AuthContext';
+import Sidebar from './components/Layout/Sidebar';
+import BottomNavigation from './components/Layout/BottomNavigation';
+import InstallPrompt from './components/Layout/InstallPrompt';
+import NewsFeed from './components/News/NewsFeed';
+import CategoryGrid from './components/Categories/CategoryGrid';
+import SearchPage from './components/Search/SearchPage';
+import ProfilePage from './components/Profile/ProfilePage';
+import MyActionsPage from './components/Profile/MyActionsPage';
+import PublicProfilePage from './components/Profile/PublicProfilePage';
+import LoginModal from './components/Auth/LoginModal';
+import { NavigationItem } from './types';
+
+const AppContent: React.FC = () => {
+  const [activeItem, setActiveItem] = useState<NavigationItem>('feed');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { currentUser } = useAuth();
+
+  const handleItemChange = (item: NavigationItem) => {
+    // Check if user needs to login for certain features
+    if (!currentUser && (item === 'profile' || item === 'my-actions')) {
+      setShowLoginModal(true);
+      return;
     }
-    return { totalArticles: 0, articles: [] };
-  }
-
-  const articles: NewsArticle[] = data.articles
-    .filter((article: any) => article.title && article.url)
-    .map((article: any, index: number): NewsArticle => {
-      const urlBase64 = article.url ? btoa(article.url) : `news-${Date.now()}`;
-      const id = `${urlBase64}-${index}`;
-
-      return {
-        id: id,
-        title: article.title || "Sem título",
-        description: article.description || "",
-        content: article.content || "",
-        url: article.url,
-        image: article.urlToImage || "https://placehold.co/600x400?text=Sem+Imagem",
-        publishedAt: article.publishedAt || new Date().toISOString(),
-        lang: "pt",
-        source: {
-          id: article.source?.id || null,
-          name: article.source?.name || "Fonte Desconhecida",
-        },
-      };
-    });
-
-  return {
-    totalArticles: data.totalResults || articles.length,
-    articles,
+    
+    setActiveItem(item);
+    setViewingUserId(null); // Reset viewing user when changing tabs
+    if (item !== 'categories') {
+      setSelectedCategory('');
+    }
   };
-}
 
-// ---- Função Inteligente de Fetch ----
-async function smartFetch(params: Record<string, string>): Promise<NewsResponse> {
-  try {
-    let url = '';
-    
-    // Separa o endpoint dos outros parâmetros
-    // 'endpoint' não pode ir na query string final para a NewsAPI
-    const { endpoint, ...restParams } = params;
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+  };
 
-    if (IS_DEV) {
-      // Localhost: Chama direto a NewsAPI
-      const queryParams = new URLSearchParams({
-        ...restParams,
-        apiKey: NEWS_API_KEY
-      });
-      
-      url = `https://newsapi.org/v2/${endpoint}?${queryParams.toString()}`;
+  const handleUserClick = (userId: string) => {
+    if (currentUser && userId === currentUser.uid) {
+        handleItemChange('profile');
     } else {
-      // Produção: Chama o Proxy da Vercel
-      // Aqui enviamos o endpoint como query param para o NOSSO servidor saber o que fazer
-      const queryParams = new URLSearchParams({
-        ...restParams,
-        endpoint: endpoint // O backend vai ler isso e remover depois
-      });
-      url = `/api/news?${queryParams.toString()}`;
+        setViewingUserId(userId);
+        setActiveItem('user-profile');
+    }
+  };
+
+  const renderContent = () => {
+    if (activeItem === 'user-profile' && viewingUserId) {
+        return (
+            <PublicProfilePage 
+                userId={viewingUserId} 
+                onBack={() => {
+                    setViewingUserId(null);
+                    setActiveItem('feed');
+                }}
+                onUserClick={handleUserClick}
+                onLoginRequired={() => setShowLoginModal(true)}
+            />
+        );
     }
 
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    if (!response.ok) {
-      console.error(`Erro na requisição (${response.status}):`, data);
-      throw new Error(`Erro na requisição: ${response.status}`);
+    if (activeItem === 'categories' && selectedCategory) {
+      return (
+        <div className="pb-16 md:pb-0">
+          <NewsFeed 
+            category={selectedCategory} 
+            onUserClick={handleUserClick}
+          />
+        </div>
+      );
     }
 
-    return transformNewsApiResponse(data);
-  } catch (error) {
-    console.error("Error fetching news:", error);
-    return { totalArticles: 0, articles: [] };
-  }
+    switch (activeItem) {
+      case 'feed':
+        return <NewsFeed onUserClick={handleUserClick} />;
+      case 'categories':
+        return <CategoryGrid onCategorySelect={handleCategorySelect} />;
+      case 'search':
+        return <SearchPage onUserClick={handleUserClick} />;
+      case 'profile':
+        return <ProfilePage />;
+      case 'my-actions':
+        return <MyActionsPage />;
+      default:
+        return <NewsFeed onUserClick={handleUserClick} />;
+    }
+  };
+
+  const getPageTitle = () => {
+    if (activeItem === 'categories' && selectedCategory) {
+      const categoryNames = {
+        'financas': 'Finanças',
+        'saude': 'Saúde',
+        'educacao': 'Educação',
+        'esportes': 'Esportes',
+        'ciencias': 'Ciências',
+        'tecnologia': 'Tecnologia'
+      };
+      return categoryNames[selectedCategory as keyof typeof categoryNames] || selectedCategory;
+    }
+    return null;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      {/* Mobile Header (New) */}
+      <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4 sticky top-0 z-30">
+        <div className="flex items-center justify-center space-x-2">
+            <img src="/logoSF.png" alt="OnNews" className="h-8 w-auto" />
+            <span className="font-bold text-xl text-primary dark:text-white">On News</span>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar activeItem={activeItem} onItemChange={handleItemChange} />
+      </div>
+
+      {/* Main Content */}
+      <main className="md:ml-64 pb-20 md:pb-0">
+        <div className="container mx-auto px-4 py-6">
+          {/* Page Header (Categories) */}
+          {(selectedCategory || activeItem === 'categories') && !viewingUserId && (
+            <div className="mb-6">
+              {selectedCategory && (
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => setSelectedCategory('')}
+                    className="text-primary dark:text-white hover:underline text-sm"
+                  >
+                    ← Voltar
+                  </button>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {getPageTitle()}
+                  </h1>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Content */}
+          {renderContent()}
+        </div>
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation activeItem={activeItem} onItemChange={handleItemChange} />
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
+
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
+
+      {/* Toast Notifications */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          className: 'dark:bg-gray-800 dark:text-white',
+        }}
+      />
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }
 
-export class GNewsService {
-  static async getFeedNews(): Promise<NewsResponse> {
-    return smartFetch({
-      endpoint: 'everything',
-      domains: 'globo.com,uol.com.br,folha.com.br,estadao.com.br,cnnbrasil.com.br,r7.com,terra.com.br,abril.com.br,g1.globo.com,poder360.com.br,metropoles.com,brasildefato.com.br,agenciabrasil.ebc.com.br,jovempan.com.br,valor.globo.com',
-      language: 'pt',
-      pageSize: '50'
-    });
-  }
-
-  static async getCategoryNews(category: string): Promise<NewsResponse> {
-    const apiCategory = newsApiCategoryMap[category] || "general";
-    
-    // Nota: 'top-headlines' exige 'country' ou 'category'. 
-    // Não suporta 'domains' junto com 'category'.
-    return smartFetch({
-      endpoint: 'top-headlines',
-      country: 'br',
-      category: apiCategory,
-      pageSize: '50'
-    });
-  }
-
-  static async searchNews(query: string): Promise<NewsResponse> {
-    return smartFetch({
-      endpoint: 'everything',
-      q: query,
-      language: 'pt',
-      sortBy: 'publishedAt',
-      pageSize: '50'
-    });
-  }
-}
+export default App;
 """
 
 files = {
-    "api/news.js": api_news_content,
-    "src/lib/gnews.ts": gnews_frontend_content
+    "src/components/Layout/InstallPrompt.tsx": install_prompt_content,
+    "src/App.tsx": app_content
 }
 
 for path, content in files.items():
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(content.strip())
-        print(f"Corrigido: {path}")
+        print(f"Arquivo atualizado/criado: {path}")
 
-print("\\nArquivos atualizados. Commit para a Vercel para testar.")
+print("\\nPrompt de instalação configurado!")
