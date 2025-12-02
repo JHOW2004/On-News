@@ -4,6 +4,10 @@
   <img src="public/logoSF.png" alt="OnNews Logo" width="200" />
 </p>
 
+> 🔗 **Acesse o projeto online:** [https://on-news.vercel.app/](https://on-news.vercel.app/)
+
+> Desenvolvido por Anna, Franciele, Jonathas e João
+
 OnNews é uma aplicação web moderna que combina o consumo de notícias em tempo real com interações sociais. Os usuários podem explorar as últimas manchetes, categorizar notícias, curtir, comentar e compartilhar artigos, além de interagir com perfis de outros usuários.
 
 O projeto é uma **Progressive Web App (PWA)**, permitindo que seja instalado nativamente em dispositivos móveis e desktops.
@@ -117,4 +121,4 @@ VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXXXX
 
 ---
 
-Desenvolvido com ❤️ por Anna, Fran, Jhow e João
+Desenvolvido com ❤️
