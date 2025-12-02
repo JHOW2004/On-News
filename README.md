@@ -6,7 +6,7 @@
 
 > 🔗 **Acesse o projeto online:** [https://on-news.vercel.app/](https://on-news.vercel.app/)
 
-> Desenvolvido por [Anna](https://github.com/amclementino), Franciele, João e [Jonathas](https://github.com/JHOW2004)
+> Desenvolvido por [Anna](https://github.com/amclementino), [Franciele](https://github.com/francielesevilha), João e [Jonathas](https://github.com/JHOW2004)
 
 OnNews é uma aplicação web moderna que combina o consumo de notícias em tempo real com interações sociais. Os usuários podem explorar as últimas manchetes, categorizar notícias, curtir, comentar e compartilhar artigos, além de interagir com perfis de outros usuários.
 
