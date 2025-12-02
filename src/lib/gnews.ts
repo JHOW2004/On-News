@@ -118,7 +118,7 @@ export class GNewsService {
       endpoint: 'everything',
       domains: 'globo.com,uol.com.br,folha.com.br,estadao.com.br,cnnbrasil.com.br,r7.com,terra.com.br,abril.com.br,g1.globo.com,poder360.com.br,metropoles.com,brasildefato.com.br,agenciabrasil.ebc.com.br,jovempan.com.br,valor.globo.com',
       language: 'pt',
-      pageSize: '50'
+      pageSize: '100'
     });
   }
 
@@ -128,10 +128,10 @@ export class GNewsService {
     // Nota: 'top-headlines' exige 'country' ou 'category'. 
     // Não suporta 'domains' junto com 'category'.
     return smartFetch({
-      endpoint: 'top-headlines',
-      country: 'br',
-      category: apiCategory,
-      pageSize: '50'
+      endpoint: 'everything',
+      language: 'pt',
+      q: apiCategory,
+      pageSize: '100'
     });
   }
 
@@ -141,7 +141,7 @@ export class GNewsService {
       q: query,
       language: 'pt',
       sortBy: 'publishedAt',
-      pageSize: '50'
+      pageSize: '100'
     });
   }
 }
