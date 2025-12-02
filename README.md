@@ -35,7 +35,7 @@ Para rodar este projeto localmente, você precisará configurar as variáveis de
 
 ```env
 # Chave da API de Notícias (NewsAPI.org)
-VITE_GNEWS_API_KEY=7bd2cdf498ed42d4b7e687e98f25beac
+VITE_GNEWS_API_KEY=XXXXXXXXXXXX
 
 # Configurações do Firebase
 VITE_FIREBASE_API_KEY=XXXXXXXXXXXX
