@@ -1,11 +1,99 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logoSF.png" />
+    
+    <!-- Configurações de Visualização -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OnNews - Rede Social de Notícias</title>
-    <meta name="description" content="A rede social de notícias mais completa do Brasil. Mantenha-se informado com as últimas notícias, comente e compartilhe com outros usuários." />
+    <meta name="theme-color" content="#2563EB" /> <!-- Cor primária do app (azul) -->
+
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logoSF.png" />
+    <link rel="apple-touch-icon" href="/Icon.png" />
+
+    <title>OnNews | Sua Rede Social de Notícias em Tempo Real</title>
+    
+    <meta
+      name="description"
+      content="A OnNews é a rede social de notícias mais completa do Brasil. Acompanhe manchetes em tempo real sobre política, esportes e tecnologia. Crie seu perfil, comente e interaja."
+    />
+
+    <meta
+      name="keywords"
+      content="OnNews, On News, notícias, rede social, jornalismo, atualidades, feed de notícias, Brasil, política, esportes, tecnologia, interação social"
+    />
+
+    <meta name="author" content="OnNews Team" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- URL Canônica (Evita conteúdo duplicado) -->
+    <link rel="canonical" href="https://on-news.vercel.app/" />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://on-news.vercel.app/" />
+    <meta
+      property="og:title"
+      content="OnNews | Conecte-se com a informação"
+    />
+    <meta
+      property="og:description"
+      content="Descubra o que está acontecendo no mundo agora. Leia, curta e debata as notícias mais importantes do dia na OnNews."
+    />
+    <meta
+      property="og:image"
+      content="https://on-news.vercel.app/Clip.png"
+    />
+    <meta property="og:site_name" content="OnNews" />
+    <meta property="og:locale" content="pt_BR" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:domain" content="on-news.vercel.app/" />
+    <meta property="twitter:url" content="https://on-news.vercel.app/" />
+    <meta
+      name="twitter:title"
+      content="OnNews | Sua Rede Social de Notícias"
+    />
+    <meta
+      name="twitter:description"
+      content="A plataforma onde a notícia encontra a interação social. Fique informado e compartilhe sua opinião."
+    />
+    <meta
+      name="twitter:image"
+      content="ttps://on-news.vercel.app/Clip.png"
+    />
+
+    <!-- Schema.org (Dados Estruturados para o Google entender que é um Site/App) -->
+    <script type="application/ld+json">
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "OnNews",
+          "alternateName": ["On News", "Rede Social OnNews"],
+          "url": "https://on-news.vercel.app/",
+          "description": "A rede social de notícias mais completa do Brasil.",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://on-news.vercel.app",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "OnNews",
+          "url": "https://on-news.vercel.app/",
+          "logo": "ttps://on-news.vercel.app/Clip.png",
+          "sameAs": [
+            "https://www.instagram.com/seu-perfil-onnews",
+            "https://twitter.com/seu-perfil-onnews"
+          ]
+        }
+      ]
+    </script>
   </head>
   <body>
     <div id="root"></div>

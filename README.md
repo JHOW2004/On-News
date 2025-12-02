@@ -71,4 +71,3 @@ VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXXXX
 ---
 
 Desenvolvido com ❤️
-```
