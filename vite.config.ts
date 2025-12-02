@@ -11,7 +11,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       // Configuração para ignorar sitemap e robots no Service Worker
       workbox: {
-        navigateFallbackDenylist: [/^\\/sitemap\\.xml$/, /^\\/robots\\.txt$/]
+        navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/]
       },
       manifest: {
         name: 'OnNews',
