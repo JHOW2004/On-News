@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+   
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2563EB" />
+
+    <meta name="google-site-verification" content="LrpU9boxojAVPUEM5QJmJ0j0qoNUAFtaOGmODb24ydU" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/logoSF.png" />
+    <link rel="apple-touch-icon" href="/pwa-512x512.png" />
+
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+    <link rel="dns-prefetch" href="//www.googletagmanager.com">
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <title>OnNews | Portal de Notícias e Rede Social</title>
+    
+    <meta
+      name="description"
+      content="Acompanhe as últimas notícias do Brasil em tempo real no OnNews. Atualizações sobre política, economia, esportes e tecnologia. Crie seu perfil e participe das discussões."
+    />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://on-news.vercel.app/" />
+
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="OnNews | Conecte-se com a informação" />
+    <meta property="og:description" content="Descubra o que está acontecendo no mundo agora. Leia, curta e debata as notícias mais importantes do dia na OnNews." />
+    <meta property="og:url" content="https://on-news.vercel.app/" />
+    <meta property="og:site_name" content="OnNews" />
+    <meta property="og:image" content="https://on-news.vercel.app/Clip.png" />
+    
+    <!-- Dados para Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="OnNews | Sua Rede Social de Notícias" />
+    <meta name="twitter:description" content="A plataforma onde a notícia encontra a interação social." />
+    <meta name="twitter:image" content="https://on-news.vercel.app/Clip.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://on-news.vercel.app/#organization",
+            "name": "OnNews",
+            "url": "https://on-news.vercel.app/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://on-news.vercel.app/Clip.png",
+              "contentUrl": "https://on-news.vercel.app/Clip.png",
+              "width": 512,
+              "height": 512,
+              "caption": "OnNews Logo"
+            },
+            "sameAs": [
+              "https://www.instagram.com/seu-perfil",
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://on-news.vercel.app/#website",
+            "url": "https://on-news.vercel.app/",
+            "name": "OnNews",
+            "description": "Rede Social de Notícias",
+            "publisher": {
+              "@id": "https://on-news.vercel.app/#organization"
+            },
+            "inLanguage": "pt-BR",
+            "potentialAction": [
+              {
+                "@type": "SearchAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "https://on-news.vercel.app/search?q={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+              }
+            ]
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://on-news.vercel.app/#webpage",
+            "url": "https://on-news.vercel.app/",
+            "name": "OnNews | Portal de Notícias e Rede Social",
+            "isPartOf": {
+              "@id": "https://on-news.vercel.app/#website"
+            },
+            "about": {
+              "@id": "https://on-news.vercel.app/#organization"
+            },
+            "description": "Acompanhe as últimas notícias do Brasil em tempo real no OnNews. Atualizações sobre política, economia, esportes e tecnologia.",
+            "inLanguage": "pt-BR",
+            "datePublished": "2026-02-03T15:29:00+00:00",
+            "dateModified": "2026-02-03T15:29:00+00:00" 
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
