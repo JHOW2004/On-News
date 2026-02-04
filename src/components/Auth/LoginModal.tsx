@@ -82,6 +82,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             {currentView === "reset-password" && "Recuperar Senha"}
           </h2>
           <button
+            aria-label="closeModal"
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
@@ -132,6 +133,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                         required
                       />
                       <button
+                        aria-label="showpassword"
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -148,6 +150,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Submit Button */}
                 <button
+                  aria-label="submitbutton"
                   type="submit"
                   disabled={loading}
                   className="w-full py-2 px-4 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -155,8 +158,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   {loading
                     ? "Carregando..."
                     : currentView === "login"
-                    ? "Entrar"
-                    : "Enviar Email"}
+                      ? "Entrar"
+                      : "Enviar Email"}
                 </button>
               </div>
             </form>
@@ -168,6 +171,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               {currentView === "login" && (
                 <>
                   <button
+                    aria-label="resetpassword"
                     onClick={() => setCurrentView("reset-password")}
                     className="text-sm text-primary hover:underline block w-full"
                   >
@@ -176,6 +180,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Não tem conta?{" "}
                     <button
+                      aria-label="sigup"
                       onClick={() => setCurrentView("signup")}
                       className="text-primary hover:underline font-medium"
                     >
@@ -187,6 +192,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
               {currentView === "reset-password" && (
                 <button
+                  aria-label="login"
                   onClick={() => setCurrentView("login")}
                   className="text-sm text-primary hover:underline"
                 >

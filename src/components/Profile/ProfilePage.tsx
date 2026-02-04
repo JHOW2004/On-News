@@ -1,12 +1,21 @@
-import React, { useState, useRef } from 'react';
-import { Camera, PencilLine, Save, X, Sun, Moon, LogOut, Loader2 } from 'lucide-react';
-import { updateProfile } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth, db, storage } from '../../lib/firebase';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import toast from 'react-hot-toast';
+import React, { useState, useRef } from "react";
+import {
+  Camera,
+  PencilLine,
+  Save,
+  X,
+  Sun,
+  Moon,
+  LogOut,
+  Loader2,
+} from "lucide-react";
+import { updateProfile } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, db, storage } from "../../lib/firebase";
+import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
+import toast from "react-hot-toast";
 
 const ProfilePage: React.FC = () => {
   const { currentUser, logout } = useAuth();
@@ -14,10 +23,10 @@ const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [editData, setEditData] = useState({
-    displayName: currentUser?.displayName || '',
-    description: currentUser?.description || ''
+    displayName: currentUser?.displayName || "",
+    description: currentUser?.description || "",
   });
 
   if (!currentUser) {
@@ -38,15 +47,19 @@ const ProfilePage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      toast.error('A imagem deve ter no máximo 5MB');
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB limit
+      toast.error("A imagem deve ter no máximo 5MB");
       return;
     }
 
     setIsUploading(true);
     try {
       // 1. Upload to Storage
-      const storageRef = ref(storage, `profiles/${currentUser.uid}/${Date.now()}_${file.name}`);
+      const storageRef = ref(
+        storage,
+        `profiles/${currentUser.uid}/${Date.now()}_${file.name}`,
+      );
       await uploadBytes(storageRef, file);
       const photoURL = await getDownloadURL(storageRef);
 
@@ -56,14 +69,14 @@ const ProfilePage: React.FC = () => {
       }
 
       // 3. Update Firestore User Document
-      const userRef = doc(db, 'users', currentUser.uid);
+      const userRef = doc(db, "users", currentUser.uid);
       await updateDoc(userRef, { photoURL });
 
-      window.location.reload(); 
-      toast.success('Foto de perfil atualizada!');
+      window.location.reload();
+      toast.success("Foto de perfil atualizada!");
     } catch (error) {
-      console.error('Erro ao atualizar foto:', error);
-      toast.error('Erro ao atualizar foto de perfil');
+      console.error("Erro ao atualizar foto:", error);
+      toast.error("Erro ao atualizar foto de perfil");
     } finally {
       setIsUploading(false);
     }
@@ -71,29 +84,31 @@ const ProfilePage: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      const userRef = doc(db, 'users', currentUser.uid);
+      const userRef = doc(db, "users", currentUser.uid);
       await updateDoc(userRef, {
         displayName: editData.displayName,
-        description: editData.description
+        description: editData.description,
       });
-      
+
       if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { displayName: editData.displayName });
+        await updateProfile(auth.currentUser, {
+          displayName: editData.displayName,
+        });
       }
 
-      toast.success('Perfil atualizado!');
+      toast.success("Perfil atualizado!");
       setIsEditing(false);
     } catch (error) {
-      toast.error('Erro ao atualizar perfil');
+      toast.error("Erro ao atualizar perfil");
     }
   };
 
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Logout realizado com sucesso!');
+      toast.success("Logout realizado com sucesso!");
     } catch (error) {
-      toast.error('Erro ao fazer logout');
+      toast.error("Erro ao fazer logout");
     }
   };
 
@@ -110,13 +125,16 @@ const ProfilePage: React.FC = () => {
       {/* Header */}
       <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 mb-6">
         <div className="flex items-center space-x-4">
-          <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
+          <div
+            className="relative group cursor-pointer"
+            onClick={handlePhotoClick}
+          >
             <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-bold overflow-hidden border-2 border-white/50">
               {isUploading ? (
                 <Loader2 className="w-8 h-8 animate-spin" />
               ) : currentUser.photoURL ? (
-                <img 
-                  src={currentUser.photoURL} 
+                <img
+                  src={currentUser.photoURL}
                   alt={currentUser.displayName}
                   className="w-full h-full object-cover"
                 />
@@ -127,11 +145,14 @@ const ProfilePage: React.FC = () => {
             <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <Camera className="w-6 h-6 text-white" />
             </div>
-            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary">
+            <button
+              aria-label="camera"
+              className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary"
+            >
               <Camera className="w-4 h-4" />
             </button>
           </div>
-          
+
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-white">
               {currentUser.displayName}
@@ -141,9 +162,14 @@ const ProfilePage: React.FC = () => {
 
           <button
             onClick={() => setIsEditing(!isEditing)}
+            aria-label="edit"
             className="bg-white/20 backdrop-blur-sm p-2 rounded-lg text-white hover:bg-white/30 transition-colors"
           >
-            {isEditing ? <X className="w-5 h-5" /> : <PencilLine className="w-5 h-5" />}
+            {isEditing ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <PencilLine className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
@@ -159,18 +185,28 @@ const ProfilePage: React.FC = () => {
               <input
                 type="text"
                 value={editData.displayName}
-                onChange={(e) => setEditData(prev => ({ ...prev, displayName: e.target.value }))}
+                onChange={(e) =>
+                  setEditData((prev) => ({
+                    ...prev,
+                    displayName: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Descrição
               </label>
               <textarea
                 value={editData.description}
-                onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setEditData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 placeholder="Conte um pouco sobre você..."
@@ -179,6 +215,7 @@ const ProfilePage: React.FC = () => {
 
             <div className="flex space-x-3">
               <button
+                aria-label="save"
                 onClick={handleSave}
                 className="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center space-x-2"
               >
@@ -186,6 +223,7 @@ const ProfilePage: React.FC = () => {
                 <span>Salvar</span>
               </button>
               <button
+                aria-label="cancel"
                 onClick={() => setIsEditing(false)}
                 className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
@@ -202,17 +240,29 @@ const ProfilePage: React.FC = () => {
               </h3>
               <div className="space-y-3">
                 <div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Email:</span>
-                  <p className="text-gray-900 dark:text-white">{currentUser.email}</p>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Email:
+                  </span>
+                  <p className="text-gray-900 dark:text-white">
+                    {currentUser.email}
+                  </p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Nome de usuário:</span>
-                  <p className="text-gray-900 dark:text-white">@{currentUser.username}</p>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Nome de usuário:
+                  </span>
+                  <p className="text-gray-900 dark:text-white">
+                    @{currentUser.username}
+                  </p>
                 </div>
                 {currentUser.description && (
                   <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Descrição:</span>
-                    <p className="text-gray-900 dark:text-white mt-1">{currentUser.description}</p>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Descrição:
+                    </span>
+                    <p className="text-gray-900 dark:text-white mt-1">
+                      {currentUser.description}
+                    </p>
                   </div>
                 )}
               </div>
@@ -225,18 +275,24 @@ const ProfilePage: React.FC = () => {
               </h3>
               <div className="space-y-3">
                 <button
+                  aria-label="theme"
                   onClick={toggleTheme}
                   className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center space-x-3">
-                    {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                    {theme === "light" ? (
+                      <Moon className="w-5 h-5" />
+                    ) : (
+                      <Sun className="w-5 h-5" />
+                    )}
                     <span className="text-gray-900 dark:text-white">
-                      Tema {theme === 'light' ? 'Escuro' : 'Claro'}
+                      Tema {theme === "light" ? "Escuro" : "Claro"}
                     </span>
                   </div>
                 </button>
 
                 <button
+                  aria-label="logout"
                   onClick={handleLogout}
                   className="w-full flex items-center justify-between p-3 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >

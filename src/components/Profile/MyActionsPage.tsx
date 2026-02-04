@@ -130,6 +130,8 @@ const MyActionsPage: React.FC = () => {
             return (
               <button
                 key={tab.id}
+                id={tab.name}
+                aria-label={tab.name}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Send, User } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Comment } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState } from "react";
+import { Send, User } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Comment } from "../../types";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface CommentSectionProps {
   articleId: string;
@@ -13,27 +13,27 @@ interface CommentSectionProps {
   onAddComment: (content: string) => Promise<void>; // Nova prop
 }
 
-const CommentSection: React.FC<CommentSectionProps> = ({ 
-  comments, 
+const CommentSection: React.FC<CommentSectionProps> = ({
+  comments,
   onLoginRequired,
   onUserClick,
-  onAddComment
+  onAddComment,
 }) => {
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser } = useAuth();
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) {
       onLoginRequired?.();
       return;
     }
-    
+
     if (newComment.trim()) {
       setIsSubmitting(true);
       await onAddComment(newComment.trim());
-      setNewComment('');
+      setNewComment("");
       setIsSubmitting(false);
     }
   };
@@ -44,8 +44,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         <form onSubmit={handleSubmit} className="flex space-x-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white text-sm font-medium">
             {currentUser.photoURL ? (
-              <img 
-                src={currentUser.photoURL} 
+              <img
+                src={currentUser.photoURL}
                 alt={currentUser.displayName}
                 className="w-full h-full rounded-full object-cover"
               />
@@ -63,6 +63,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
               disabled={isSubmitting}
             />
             <button
+              aria-label="submit"
               type="submit"
               disabled={!newComment.trim() || isSubmitting}
               className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -81,13 +82,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         ) : (
           comments.map((comment) => (
             <div key={comment.id} className="flex space-x-3">
-              <div 
+              <div
                 className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white text-xs font-medium cursor-pointer overflow-hidden"
                 onClick={() => onUserClick?.(comment.userId)}
               >
                 {comment.userPhoto ? (
-                  <img 
-                    src={comment.userPhoto} 
+                  <img
+                    src={comment.userPhoto}
                     alt={comment.username}
                     className="w-full h-full object-cover"
                   />
@@ -98,14 +99,18 @@ const CommentSection: React.FC<CommentSectionProps> = ({
               <div className="flex-1">
                 <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
                   <div className="flex items-center space-x-2 mb-1">
-                    <span 
+                    <span
                       className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:underline"
                       onClick={() => onUserClick?.(comment.userId)}
                     >
                       @{comment.username}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {comment.createdAt ? format(comment.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : ''}
+                      {comment.createdAt
+                        ? format(comment.createdAt, "dd/MM/yyyy 'às' HH:mm", {
+                            locale: ptBR,
+                          })
+                        : ""}
                     </span>
                   </div>
                   <p className="text-sm text-gray-800 dark:text-gray-200">
