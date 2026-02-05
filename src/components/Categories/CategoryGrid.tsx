@@ -7,7 +7,6 @@ import {
   Atom,
   Laptop,
 } from "lucide-react";
-import { newsCategories } from "../../lib/gnews";
 
 interface CategoryGridProps {
   onCategorySelect: (category: string) => void;
@@ -66,7 +65,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ onCategorySelect }) => {
   ];
 
   return (
-    <div>
+    <section>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           Categorias
@@ -103,7 +102,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ onCategorySelect }) => {
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };
 

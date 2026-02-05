@@ -125,7 +125,7 @@ const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
   const joinDate = getSafeDate(user.createdAt);
 
   return (
-    <div>
+    <section>
       <button
         aria-label="return"
         onClick={onBack}
@@ -234,7 +234,7 @@ const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
           })
         )}
       </div>
-    </div>
+    </section>
   );
 };
 

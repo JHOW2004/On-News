@@ -39,7 +39,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <section className="space-y-4">
       {currentUser && (
         <form onSubmit={handleSubmit} className="flex space-x-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white text-sm font-medium">
@@ -122,7 +122,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           ))
         )}
       </div>
-    </div>
+    </section>
   );
 };
 

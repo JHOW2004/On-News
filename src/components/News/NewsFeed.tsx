@@ -97,19 +97,19 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <section className="flex items-center justify-center py-12">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
           <p className="text-gray-600 dark:text-gray-400">Carregando notícias...</p>
         </div>
-      </div>
+      </section>
     );
   }
 
   const hasMoreArticles = displayedArticles.length < articles.length;
 
   return (
-    <div className="space-y-6">
+    <section className="space-y-6">
       {displayedArticles.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400">
@@ -144,11 +144,11 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick 
           )}
 
           {!hasMoreArticles && displayedArticles.length > 0 && (
-            <div className="text-center py-8">
+            <footer className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Você visualizou todas as {articles.length} notícias disponíveis.
               </p>
-            </div>
+            </footer>
           )}
         </>
       )}
@@ -157,7 +157,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick 
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
       />
-    </div>
+    </section>
   );
 };
 

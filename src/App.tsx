@@ -107,13 +107,13 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <header className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Mobile Header (New) */}
       <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4 sticky top-0 z-30">
         <div className="flex items-center justify-center space-x-2">
-          <img src="/logoSF.png" alt="OnNews" className="h-8 w-auto" />
+          <img src="/OnNewsBr.png" alt="OnNews" className="h-8 w-auto" />
           <span className="font-bold text-xl text-primary dark:text-white">
-            On News
+            On News BR
           </span>
         </div>
       </div>
@@ -124,7 +124,7 @@ const AppContent: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <main className="md:ml-64 pb-20 md:pb-0">
+      <section className="md:ml-64 pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-6">
           {/* Page Header (Categories) */}
           {(selectedCategory || activeItem === "categories") &&
@@ -150,7 +150,7 @@ const AppContent: React.FC = () => {
           {/* Content */}
           {renderContent()}
         </div>
-      </main>
+      </section>
 
       {/* Mobile Bottom Navigation */}
       <BottomNavigation
@@ -175,7 +175,7 @@ const AppContent: React.FC = () => {
           className: "dark:bg-gray-800 dark:text-white",
         }}
       />
-    </div>
+    </header>
   );
 };
 

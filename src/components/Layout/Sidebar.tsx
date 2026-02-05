@@ -47,9 +47,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemChange }) => {
       {/* Logo */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-2">
-          <img src="/logoSF.webp" alt="OnNews" className="h-10 w-auto" />
+          <img src="/OnNewsBr.webp" alt="OnNews" className="h-10 w-auto" />
           <span className="font-bold text-xl text-primary dark:text-white">
-            On News
+            On News BR
           </span>
         </div>
       </div>

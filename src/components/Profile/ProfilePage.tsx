@@ -113,7 +113,7 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <section className="max-w-2xl mx-auto">
       <input
         type="file"
         ref={fileInputRef}
@@ -306,7 +306,7 @@ const ProfilePage: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 };
 

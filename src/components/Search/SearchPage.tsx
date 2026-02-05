@@ -51,7 +51,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ onUserClick }) => {
   };
 
   return (
-    <div>
+    <section>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           Pesquisar
@@ -146,7 +146,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ onUserClick }) => {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

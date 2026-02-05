@@ -75,7 +75,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <img src="/logoSF.webp" alt="OnNews" className="h-10 w-auto" />
+          <img src="/OnNewsBr.webp" alt="OnNews" className="h-10 w-auto" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {currentView === "login" && "Entrar"}
             {currentView === "signup" && "Criar Conta"}
