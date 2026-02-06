@@ -4,7 +4,7 @@
   <img src="public/OnNewsBr.png" alt="OnNews Logo" width="200" />
 </p>
 
-> 🔗 **Acesse o projeto online:** [https://on-news-br.vercel.app/](On News BR)
+> 🔗 **Acesse o projeto online:** [https://on-news-br.vercel.app/](https://on-news-br.vercel.app/)
 
 > Desenvolvido por [Anna](https://github.com/amclementino), [Franciele](https://github.com/francielesevilha), João e [Jonathas](https://github.com/JHOW2004)
 
