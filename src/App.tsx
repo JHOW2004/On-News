@@ -113,7 +113,7 @@ const AppContent: React.FC = () => {
         <div className="flex items-center justify-center space-x-2">
           <img src="/OnNewsBr.png" alt="OnNews" className="h-8 w-auto" />
           <span className="font-bold text-xl text-primary dark:text-white">
-            On News
+            On News BR
           </span>
         </div>
       </div>
