@@ -36,7 +36,6 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? "text-primary" : ""}`} />
-              <span className="text-xs font-medium">{item.label}</span>
             </button>
           );
         })}
