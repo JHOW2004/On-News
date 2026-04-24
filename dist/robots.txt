@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://on-news-br.vercel.app/sitemap.xml
