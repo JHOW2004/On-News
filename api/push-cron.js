@@ -1,9 +1,8 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import webpush from 'web-push';
 
 // Configuração do Web Push (VAPID)
-// Em produção, use variáveis de ambiente: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
 
@@ -15,27 +14,22 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   );
 }
 
-// Inicializa Firebase Admin
+// Configuração do Firebase (Client SDK funciona no Node da Vercel)
 const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  // Para Firebase Admin na Vercel, o ideal é usar uma Service Account JSON
-  // Mas para simplificar aqui, vamos usar o mínimo
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID,
 };
 
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-
-const db = getFirestore();
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
 
 export default async function handler(req, res) {
-  // Proteção simples: Vercel envia um cabeçalho específico para Crons
-  // if (req.headers['x-vercel-cron'] !== '1') {
-  //   return res.status(401).json({ error: 'Unauthorized' });
-  // }
-
   try {
-    const subscriptionsSnapshot = await db.collection('pushSubscriptions').get();
+    const subscriptionsSnapshot = await getDocs(collection(db, 'pushSubscriptions'));
     const subscriptions = [];
     subscriptionsSnapshot.forEach(doc => {
       subscriptions.push(JSON.parse(doc.data().subscription));

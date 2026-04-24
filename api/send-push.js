@@ -1,5 +1,5 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import webpush from 'web-push';
 
 // Configuração do Web Push (VAPID)
@@ -14,16 +14,18 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   );
 }
 
-// Inicializa Firebase Admin
+// Configuração do Firebase
 const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID,
 };
 
-if (!getApps().length) {
-  initializeApp(firebaseConfig);
-}
-
-const db = getFirestore();
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -37,9 +39,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const subDoc = await db.collection('pushSubscriptions').doc(toUserId).get();
+    const subDoc = await getDoc(doc(db, 'pushSubscriptions', toUserId));
     
-    if (!subDoc.exists) {
+    if (!subDoc.exists()) {
       return res.status(404).json({ error: 'No subscription found for user' });
     }
 
