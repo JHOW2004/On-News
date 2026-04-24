@@ -197,9 +197,9 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors flex flex-col">
+    <div className="h-screen w-full max-w-full bg-white dark:bg-gray-900 transition-colors flex flex-col overflow-hidden">
       {/* Mobile Header (Instagram Style) */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 glass border-b border-gray-100 dark:border-gray-800 w-full max-w-full overflow-hidden">
+      <header className="md:hidden glass border-b border-gray-100 dark:border-gray-800 w-full overflow-hidden flex-shrink-0">
         <div className="flex items-center justify-between px-4 h-14 w-full">
           <div
             className="flex items-center space-x-1 cursor-pointer select-none"
@@ -230,15 +230,15 @@ const AppContent: React.FC = () => {
         </div>
       </header>
 
-      <div className="flex flex-1 w-full mt-14 md:mt-0">
+      <div className="flex flex-1 w-full overflow-hidden">
         {/* Desktop Sidebar (Fixed in component) */}
         <div className="hidden md:block">
           <Sidebar activeItem={activeItem} onItemChange={handleItemChange} />
         </div>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 pb-24 md:pb-0 md:pl-64">
-          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10 pb-32 md:pb-10">
+        <main className="flex-1 w-full max-w-full min-w-0 overflow-y-auto overflow-x-hidden md:pl-64 custom-scrollbar">
+          <div className="w-full max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
             {/* Page Header (Categories) */}
             {(selectedCategory || activeItem === "categories") &&
               !viewingUserId && (

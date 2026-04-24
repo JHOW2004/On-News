@@ -191,29 +191,31 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick,
           <div className="grid gap-6 w-full max-w-full overflow-hidden px-1">
             {displayedArticles.map((item, index) => {
               const isOpinion = (item as any).type === 'opinion';
-              const card = isOpinion ? (
-                <OpinionCard
-                  key={item.id}
-                  post={item as OpinionPost}
-                  onLoginRequired={() => setShowLoginModal(true)}
-                  onUserClick={onUserClick}
-                  onEdit={onEdit}
-                  onPostClick={onPostClick}
-                />
-              ) : (
-                <NewsCard
-                  key={item.id}
-                  article={item as NewsArticle}
-                  onLoginRequired={() => setShowLoginModal(true)}
-                  onUserClick={onUserClick}
-                />
+              const card = (
+                <div key={`card-${item.id}`} className="min-w-0 w-full">
+                  {isOpinion ? (
+                    <OpinionCard
+                      post={item as OpinionPost}
+                      onLoginRequired={() => setShowLoginModal(true)}
+                      onUserClick={onUserClick}
+                      onEdit={onEdit}
+                      onPostClick={onPostClick}
+                    />
+                  ) : (
+                    <NewsCard
+                      article={item as NewsArticle}
+                      onLoginRequired={() => setShowLoginModal(true)}
+                      onUserClick={onUserClick}
+                    />
+                  )}
+                </div>
               );
 
               return (
                 <React.Fragment key={item.id}>
                   {card}
                   {index === 2 && !userId && !searchQuery && (
-                    <div className="my-2">
+                    <div className="my-2 min-w-0 w-full">
                       <UserCarousel 
                         onUserClick={onUserClick!} 
                         onLoginRequired={() => setShowLoginModal(true)} 

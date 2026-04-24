@@ -17,13 +17,27 @@
 }
 
 html, body {
-  @apply overflow-x-hidden w-full max-w-full m-0 p-0;
+  @apply w-full h-full m-0 p-0;
   min-width: 310px;
   -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
 
 #root {
-  @apply w-full max-w-full overflow-x-hidden flex flex-col min-h-screen;
+  @apply w-full h-full flex flex-col;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 10px;
 }
 
 body {

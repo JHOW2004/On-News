@@ -20,7 +20,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 w-full max-w-full bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-4 py-2 md:hidden z-50 overflow-hidden">
+    <nav className="w-full bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-4 py-2 md:hidden z-50">
       <div className="flex justify-between items-center max-w-lg mx-auto">
         {navigationItems.map((item) => {
           const Icon = item.icon;
