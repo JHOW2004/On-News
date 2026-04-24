@@ -4,11 +4,11 @@ import {
   MessageCircle,
   Share,
   ExternalLink,
-  Calendar,
+  MoreHorizontal,
+  Bookmark,
   Building,
-  User,
 } from "lucide-react";
-import { format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { NewsArticle } from "../../lib/gnews";
 import { useNewsInteractions } from "../../hooks/useNewsInteractions";
@@ -19,20 +19,20 @@ interface NewsCardProps {
   article: NewsArticle;
   onLoginRequired?: () => void;
   onUserClick?: (userId: string) => void;
+  onPostClick?: (post: any) => void;
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({
   article,
   onLoginRequired,
   onUserClick,
+  onPostClick,
 }) => {
   const [showComments, setShowComments] = useState(false);
-  const [showLikers, setShowLikers] = useState(false);
   const { currentUser } = useAuth();
 
   if (!article) return null;
 
-  // Extraímos também o addComment do hook
   const { interactions, isLiked, toggleLike, shareArticle, addComment } =
     useNewsInteractions(article);
 
@@ -56,24 +56,44 @@ const NewsCard: React.FC<NewsCardProps> = ({
     shareArticle(article.url, article.title);
   };
 
-  const formatDate = (dateString: string) => {
+  const getTimeAgo = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return format(date, "dd/MM/yyyy - HH:mm", { locale: ptBR });
+      return formatDistanceToNow(date, { addSuffix: true, locale: ptBR });
     } catch {
-      return "Data não disponível";
+      return "há algum tempo";
     }
   };
 
   return (
-    <article className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
+    <article className="bg-white dark:bg-gray-900 border-b md:border md:rounded-xl border-gray-100 dark:border-gray-800 mb-2 md:mb-6 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-3">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center overflow-hidden">
+             <Building className="w-4 h-4 text-gray-500" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+              {article.source?.name || "Fonte desconhecida"}
+            </p>
+          </div>
+        </div>
+        <button className="text-gray-500 dark:text-gray-400">
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Image */}
       {article.image && (
-        <div className="relative aspect-video overflow-hidden">
+        <div 
+          className="relative aspect-square w-full bg-gray-100 dark:bg-gray-800 overflow-hidden cursor-pointer"
+          onDoubleClick={handleLike}
+        >
           <img
             src={article.image}
             alt={article.title}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
             }}
@@ -81,131 +101,99 @@ const NewsCard: React.FC<NewsCardProps> = ({
         </div>
       )}
 
-      {/* Content */}
-      <div className="p-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-          {article.title}
-        </h2>
-
-        {article.description && (
-          <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-3">
-            {article.description}
-          </p>
-        )}
-
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
+      {/* Action Bar */}
+      <div className="p-3 pb-0">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <Building className="w-3 h-3" />
-              <span>{article.source?.name || "Fonte desconhecida"}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Calendar className="w-3 h-3" />
-              <span>{formatDate(article.publishedAt)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4 relative">
-            {/* Like Button & Counter */}
-            <div className="flex items-center">
-              <button
-                aria-label="like"
-                onClick={handleLike}
-                className={`flex items-center space-x-1 px-3 py-1 rounded-full transition-all ${
-                  isLiked
-                    ? "text-red-600 bg-red-50 dark:bg-red-900/20"
-                    : "text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                }`}
-              >
-                <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
-              </button>
-              <button
-                aria-label="likecount"
-                onClick={() => setShowLikers(!showLikers)}
-                className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 ml-1"
-              >
-                {interactions.likesCount}
-              </button>
-
-              {/* Likers Dropdown */}
-              {showLikers && interactions.likes.length > 0 && (
-                <div className="absolute top-10 left-0 bg-white dark:bg-gray-800 shadow-xl rounded-lg p-2 z-20 border border-gray-200 dark:border-gray-600 w-48 max-h-40 overflow-y-auto">
-                  <h4 className="text-xs font-bold text-gray-500 mb-2 px-2">
-                    Curtido por:
-                  </h4>
-                  {interactions.likes.map((like) => (
-                    <div
-                      key={like.id}
-                      className="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
-                      onClick={() => {
-                        if (onUserClick) onUserClick(like.userId);
-                        setShowLikers(false);
-                      }}
-                    >
-                      <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-                        {like.userPhoto ? (
-                          <img
-                            src={like.userPhoto}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <User className="w-3 h-3" />
-                        )}
-                      </div>
-                      <span className="text-xs truncate">
-                        {like.username || "Usuário"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <button
-              aria-label="commentscount"
-              onClick={handleComment}
-              className="flex items-center space-x-1 px-3 py-1 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+              aria-label="like"
+              onClick={handleLike}
+              className={`transition-all ${isLiked ? "text-red-500" : "text-gray-900 dark:text-white"}`}
             >
-              <MessageCircle className="w-4 h-4" />
-              <span className="text-sm">{interactions.commentsCount}</span>
+              <Heart className={`w-7 h-7 ${isLiked ? "fill-current" : ""}`} strokeWidth={2} />
             </button>
-
+            <button
+              aria-label="comment"
+              onClick={handleComment}
+              className="text-gray-900 dark:text-white"
+            >
+              <MessageCircle className="w-7 h-7" strokeWidth={2} />
+            </button>
             <button
               aria-label="share"
               onClick={handleShare}
-              className="flex items-center space-x-1 px-3 py-1 rounded-full text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+              className="text-gray-900 dark:text-white"
             >
-              <Share className="w-4 h-4" />
-              <span className="text-sm">Compartilhar</span>
+              <Share className="w-7 h-7" strokeWidth={2} />
             </button>
           </div>
         </div>
-        <a
+
+        {/* Likes Count */}
+        {interactions.likesCount > 0 && (
+          <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">
+            {interactions.likesCount.toLocaleString()} curtidas
+          </p>
+        )}
+
+        {/* Caption (Title & Description) */}
+        <div className="space-y-1 mb-2">
+          <p className="text-sm text-gray-900 dark:text-white leading-snug">
+            <span className="font-bold mr-2">{article.source?.name}</span>
+            {article.title}
+          </p>
+          {article.description && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-snug">
+              {article.description}
+            </p>
+          )}
+        </div>
+
+        {/* Time Ago */}
+        <p className="text-[10px] text-gray-400 uppercase tracking-tight mb-2">
+          {getTimeAgo(article.publishedAt)}
+        </p>
+
+        {/* View Comments Toggle */}
+        {interactions.commentsCount > 0 && !showComments && (
+           <button 
+             onClick={handleComment}
+             className="text-sm text-gray-500 dark:text-gray-400 mb-2 hover:underline"
+           >
+             Ver todos os {interactions.commentsCount} comentários
+           </button>
+        )}
+      </div>
+
+      {/* External Link Button */}
+      <div className="px-3 pb-3">
+         <a
           href={article.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center space-x-1 px-3 py-3 mt-4 rounded-full bg-accent text-black font-bold hover:bg-warning/90 transition-colors text-sm"
+          className="block w-full text-center py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
         >
-          <span>Ver mais</span>
-          <ExternalLink className="w-3 h-3" />
+          Ler matéria completa
         </a>
-
-        {showComments && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <CommentSection
-              articleId={article.id}
-              comments={interactions.comments}
-              onLoginRequired={onLoginRequired}
-              onUserClick={onUserClick}
-              onAddComment={addComment} // Passando a função aqui
-            />
-          </div>
-        )}
       </div>
+
+
+
+      {/* Comments Section */}
+      {showComments && (
+        <div className="border-t border-gray-100 dark:border-gray-800 p-3">
+          <CommentSection
+            articleId={article.id}
+            comments={interactions.comments}
+            onLoginRequired={onLoginRequired}
+            onUserClick={onUserClick}
+            onAddComment={addComment}
+          />
+        </div>
+      )}
     </article>
   );
 };
 
 export default NewsCard;
+

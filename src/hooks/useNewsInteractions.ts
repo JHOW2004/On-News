@@ -7,15 +7,16 @@ import {
   query, 
   where, 
   onSnapshot,
-  orderBy
+  orderBy,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Comment, Like, ArticleInteraction } from '../types';
+import { Comment, Like, ArticleInteraction, OpinionPost, Notification } from '../types';
 import { NewsArticle } from '../lib/gnews';
 import toast from 'react-hot-toast';
 
-export const useNewsInteractions = (article: NewsArticle) => {
+export const useNewsInteractions = (article: NewsArticle | OpinionPost) => {
   const [interactions, setInteractions] = useState<ArticleInteraction>({
     articleId: article?.id || '',
     comments: [],
@@ -27,6 +28,8 @@ export const useNewsInteractions = (article: NewsArticle) => {
   const [loading, setLoading] = useState(true);
   
   const { currentUser } = useAuth();
+
+  const isOpinion = (article as any).type === 'opinion';
 
   useEffect(() => {
     if (!article?.id) return;
@@ -81,25 +84,63 @@ export const useNewsInteractions = (article: NewsArticle) => {
     };
   }, [article?.id, currentUser?.uid]);
 
-  // Função auxiliar defensiva: Garante que NENHUM campo seja undefined
   const getArticleSnapshot = () => {
     if (!article) return null;
+    
+    if (isOpinion) {
+      const post = article as OpinionPost;
+      return {
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        authorName: post.authorName,
+        userName: post.userName,
+        userPhoto: post.userPhoto,
+        color: post.color,
+        publishedAt: post.publishedAt instanceof Date ? post.publishedAt.toISOString() : post.publishedAt,
+        type: 'opinion'
+      };
+    }
+
+    const news = article as NewsArticle;
     return {
-      id: article.id || "",
-      title: article.title || "Sem título",
-      description: article.description || "",
-      content: article.content || "",
-      url: article.url || "", 
-      image: article.image || "",
-      publishedAt: article.publishedAt || new Date().toISOString(),
+      id: news.id || "",
+      title: news.title || "Sem título",
+      description: news.description || "",
+      content: news.content || "",
+      url: news.url || "", 
+      image: news.image || "",
+      publishedAt: news.publishedAt || new Date().toISOString(),
       source: {
-        id: article.source?.id || null,
-        name: article.source?.name || "Fonte Desconhecida"
-      }
+        id: news.source?.id || null,
+        name: news.source?.name || "Fonte Desconhecida"
+      },
+      type: 'news'
     };
   };
 
-  const addComment = async (content: string) => {
+  const createNotification = async (type: 'like' | 'comment' | 'reply', toUserId: string, commentContent?: string) => {
+    if (!currentUser || currentUser.uid === toUserId) return;
+
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        toUserId,
+        fromUserId: currentUser.uid,
+        fromUserName: currentUser.username,
+        fromUserPhoto: currentUser.photoURL || '',
+        type,
+        articleId: article.id,
+        articleTitle: article.title,
+        commentContent,
+        read: false,
+        createdAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error creating notification:', error);
+    }
+  };
+
+  const addComment = async (content: string, parentCommentId?: string) => {
     if (!currentUser) {
       toast.error('Você precisa fazer login para comentar');
       return;
@@ -108,21 +149,25 @@ export const useNewsInteractions = (article: NewsArticle) => {
     try {
       const snapshot = getArticleSnapshot();
       
-      // Se por algum motivo o snapshot for inválido, evitamos o crash
-      if (!snapshot) {
-         console.error("Tentativa de comentar em artigo inválido");
-         return;
-      }
-
       await addDoc(collection(db, 'comments'), {
         articleId: article.id,
         userId: currentUser.uid,
         username: currentUser.username,
         userPhoto: currentUser.photoURL || '',
         content,
-        createdAt: new Date(),
-        articleSnapshot: snapshot 
+        createdAt: serverTimestamp(),
+        articleSnapshot: snapshot,
+        parentCommentId: parentCommentId || null
       });
+
+      // Notify post owner
+      if (isOpinion) {
+        await createNotification('comment', (article as OpinionPost).userId, content);
+      }
+      
+      // If it's a reply, we should ideally notify the parent comment owner too
+      // For now, let's keep it simple
+
       toast.success('Comentário adicionado!');
     } catch (error) {
       toast.error('Erro ao adicionar comentário');
@@ -144,16 +189,20 @@ export const useNewsInteractions = (article: NewsArticle) => {
         }
       } else {
         const snapshot = getArticleSnapshot();
-        if (!snapshot) return;
 
         await addDoc(collection(db, 'likes'), {
           articleId: article.id,
           userId: currentUser.uid,
           username: currentUser.username,
           userPhoto: currentUser.photoURL || '',
-          createdAt: new Date(),
+          createdAt: serverTimestamp(),
           articleSnapshot: snapshot
         });
+
+        // Notify post owner
+        if (isOpinion) {
+          await createNotification('like', (article as OpinionPost).userId);
+        }
       }
     } catch (error) {
       toast.error('Erro ao curtir notícia');

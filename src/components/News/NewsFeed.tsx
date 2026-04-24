@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { GNewsService, NewsArticle } from '../../lib/gnews';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import NewsCard from './NewsCard';
+import OpinionCard from './OpinionCard';
+import UserCarousel from '../Social/UserCarousel';
+import { OpinionPost } from '../../types';
+
 import LoginModal from '../Auth/LoginModal';
 import toast from 'react-hot-toast';
 
@@ -9,11 +15,15 @@ interface NewsFeedProps {
   category?: string;
   searchQuery?: string;
   onUserClick?: (userId: string) => void;
+  userId?: string; // For profile page
+  status?: 'published' | 'draft';
+  onEdit?: (post: OpinionPost) => void;
+  onPostClick?: (post: OpinionPost) => void;
 }
 
-const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick }) => {
-  const [articles, setArticles] = useState<NewsArticle[]>([]);
-  const [displayedArticles, setDisplayedArticles] = useState<NewsArticle[]>([]);
+const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick, userId, status = 'published', onEdit, onPostClick }) => {
+  const [articles, setArticles] = useState<(NewsArticle | OpinionPost)[]>([]);
+  const [displayedArticles, setDisplayedArticles] = useState<(NewsArticle | OpinionPost)[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -21,30 +31,94 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const ARTICLES_PER_PAGE = 100;
+  const ARTICLES_PER_PAGE = 20;
 
   const fetchNews = useCallback(async () => {
     setLoading(true);
     try {
-      let response;
-      if (searchQuery) {
-        response = await GNewsService.searchNews(searchQuery);
-      } else if (category) {
-        response = await GNewsService.getCategoryNews(category);
-      } else {
-        response = await GNewsService.getFeedNews();
-      }
+      let newsResponse: { articles: NewsArticle[] } = { articles: [] };
       
-      setArticles(response.articles);
-      setCurrentPage(0);
-      setDisplayedArticles(response.articles.slice(0, ARTICLES_PER_PAGE));
+      // Don't fetch GNews if we are looking for a specific user's posts
+      if (!userId) {
+        if (searchQuery) {
+          newsResponse = await GNewsService.searchNews(searchQuery);
+        } else if (category) {
+          newsResponse = await GNewsService.getCategoryNews(category);
+        } else {
+          newsResponse = await GNewsService.getFeedNews();
+        }
+      }
+
+      // We'll set up the real-time listener for Opinion Posts separately
+      // but for the initial load, we'll wait for the first snapshot if needed
     } catch (error) {
       console.error('Error fetching news:', error);
       toast.error('Erro ao carregar notícias');
     } finally {
       setLoading(false);
     }
-  }, [category, searchQuery]);
+  }, [category, searchQuery, userId]);
+
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
+
+  useEffect(() => {
+    // Real-time listener for Opinion Posts
+    let opinionQuery;
+    if (userId) {
+      // User profile - show posts by this user with the specified status
+      opinionQuery = query(
+        collection(db, 'opinionPosts'),
+        where('userId', '==', userId),
+        where('status', '==', status),
+        orderBy('publishedAt', 'desc')
+      );
+    } else {
+      // Main feed - show all published opinion posts
+      opinionQuery = query(
+        collection(db, 'opinionPosts'),
+        where('status', '==', status),
+        orderBy('publishedAt', 'desc')
+      );
+    }
+
+    const unsubscribe = onSnapshot(opinionQuery, (snapshot) => {
+      const opinionPosts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        publishedAt: doc.data().publishedAt?.toDate() || new Date()
+      })) as OpinionPost[];
+
+      // Re-fetch or merge with existing articles
+      const fetchAndMerge = async () => {
+        let newsArticles: NewsArticle[] = [];
+        if (!userId) {
+          try {
+            let res;
+            if (searchQuery) res = await GNewsService.searchNews(searchQuery);
+            else if (category) res = await GNewsService.getCategoryNews(category);
+            else res = await GNewsService.getFeedNews();
+            newsArticles = res.articles;
+          } catch (e) {}
+        }
+
+        const merged = [...newsArticles, ...opinionPosts].sort((a, b) => {
+          const dateA = new Date(a.publishedAt).getTime();
+          const dateB = new Date(b.publishedAt).getTime();
+          return dateB - dateA;
+        });
+
+        setArticles(merged);
+        setDisplayedArticles(merged.slice(0, ARTICLES_PER_PAGE));
+        setLoading(false);
+      };
+
+      fetchAndMerge();
+    });
+
+    return () => unsubscribe();
+  }, [category, searchQuery, userId]);
 
   const loadMoreArticles = useCallback(() => {
     if (loadingMore) return;
@@ -65,10 +139,6 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick 
       setLoadingMore(false);
     }
   }, [articles, currentPage, loadingMore]);
-
-  useEffect(() => {
-    fetchNews();
-  }, [fetchNews]);
 
   useEffect(() => {
     if (observerRef.current) {
@@ -100,7 +170,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick 
       <section className="flex items-center justify-center py-12">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-          <p className="text-gray-600 dark:text-gray-400">Carregando notícias...</p>
+          <p className="text-gray-600 dark:text-gray-400">Carregando feed...</p>
         </div>
       </section>
     );
@@ -113,20 +183,46 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick 
       {displayedArticles.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400">
-            {searchQuery ? 'Nenhuma notícia encontrada para sua pesquisa.' : 'Nenhuma notícia disponível no momento.'}
+            {searchQuery ? 'Nenhuma publicação encontrada para sua pesquisa.' : 'Nenhuma publicação disponível no momento.'}
           </p>
         </div>
       ) : (
         <>
-          <div className="grid gap-6">
-            {displayedArticles.map((article) => (
-              <NewsCard
-                key={article.id}
-                article={article}
-                onLoginRequired={() => setShowLoginModal(true)}
-                onUserClick={onUserClick}
-              />
-            ))}
+          <div className="grid gap-6 w-full max-w-full overflow-hidden px-1">
+            {displayedArticles.map((item, index) => {
+              const isOpinion = (item as any).type === 'opinion';
+              const card = isOpinion ? (
+                <OpinionCard
+                  key={item.id}
+                  post={item as OpinionPost}
+                  onLoginRequired={() => setShowLoginModal(true)}
+                  onUserClick={onUserClick}
+                  onEdit={onEdit}
+                  onPostClick={onPostClick}
+                />
+              ) : (
+                <NewsCard
+                  key={item.id}
+                  article={item as NewsArticle}
+                  onLoginRequired={() => setShowLoginModal(true)}
+                  onUserClick={onUserClick}
+                />
+              );
+
+              return (
+                <React.Fragment key={item.id}>
+                  {card}
+                  {index === 2 && !userId && !searchQuery && (
+                    <div className="my-2">
+                      <UserCarousel 
+                        onUserClick={onUserClick!} 
+                        onLoginRequired={() => setShowLoginModal(true)} 
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
 
           {hasMoreArticles && (
@@ -137,18 +233,10 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick 
               {loadingMore && (
                 <div className="text-center">
                   <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Carregando mais notícias...</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Carregando mais...</p>
                 </div>
               )}
             </div>
-          )}
-
-          {!hasMoreArticles && displayedArticles.length > 0 && (
-            <footer className="text-center py-8">
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                Você visualizou todas as {articles.length} notícias disponíveis.
-              </p>
-            </footer>
           )}
         </>
       )}

@@ -66,14 +66,15 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ onCategorySelect }) => {
 
   return (
     <section>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Categorias
+      <div className="mb-10 px-4 md:px-0">
+        <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-1 tracking-tight">
+          Explorar
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Explore notícias por área de interesse
+        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+          Descubra notícias e artigos por área de interesse
         </p>
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {categories.map((category) => {

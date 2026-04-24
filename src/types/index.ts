@@ -8,7 +8,24 @@ export interface User {
   photoURL?: string;
   description?: string;
   createdAt: Date;
+  followersCount?: number;
+  followingCount?: number;
 }
+
+export interface Follow {
+  id: string;
+  followerId: string;
+  followingId: string;
+  createdAt: Date;
+}
+
+export interface Block {
+  id: string;
+  blockerId: string;
+  blockedId: string;
+  createdAt: Date;
+}
+
 
 export interface Comment {
   id: string;
@@ -19,7 +36,10 @@ export interface Comment {
   content: string;
   createdAt: Date;
   articleSnapshot?: NewsArticle;
+  parentCommentId?: string;
+  repliesCount?: number;
 }
+
 
 export interface Like {
   id: string;
@@ -39,6 +59,36 @@ export interface ArticleInteraction {
   commentsCount: number;
 }
 
+export interface OpinionPost {
+  id: string;
+  userId: string;
+  userName: string;
+  userPhoto?: string;
+  title: string;
+  content: string;
+  color: string;
+  authorName: string;
+  publishedAt: Date;
+  status: 'published' | 'draft';
+  likesCount: number;
+  commentsCount: number;
+  type: 'opinion';
+}
+
+export interface Notification {
+  id: string;
+  toUserId: string;
+  fromUserId: string;
+  fromUserName: string;
+  fromUserPhoto?: string;
+  type: 'like' | 'comment' | 'reply' | 'system';
+  articleId: string;
+  articleTitle: string;
+  commentContent?: string;
+  read: boolean;
+  createdAt: Date;
+}
+
 export type Theme = 'light' | 'dark';
 
-export type NavigationItem = 'feed' | 'categories' | 'profile' | 'my-actions' | 'search' | 'user-profile';
+export type NavigationItem = 'feed' | 'categories' | 'profile' | 'my-actions' | 'search' | 'user-profile' | 'create-post' | 'notifications';

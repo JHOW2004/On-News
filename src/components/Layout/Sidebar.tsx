@@ -8,6 +8,9 @@ import {
   Sun,
   Moon,
   LogOut,
+  PlusSquare,
+  Bell,
+  Heart,
 } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -23,15 +26,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemChange }) => {
   const { logout, currentUser } = useAuth();
 
   const navigationItems = [
-    { id: "feed" as NavigationItem, label: "Explorar", icon: Home },
-    { id: "categories" as NavigationItem, label: "Categorias", icon: Grid3X3 },
-    { id: "search" as NavigationItem, label: "Pesquisar", icon: Search },
-    { id: "profile" as NavigationItem, label: "Perfil", icon: User },
+    { id: "feed" as NavigationItem, label: "Página Inicial", icon: Home },
+    { id: "search" as NavigationItem, label: "Pesquisa", icon: Search },
+    { id: "categories" as NavigationItem, label: "Explorar", icon: Grid3X3 },
+    { id: "create-post" as NavigationItem, label: "Criar", icon: PlusSquare },
     {
-      id: "my-actions" as NavigationItem,
-      label: "Minhas Ações",
-      icon: Activity,
+      id: "notifications" as NavigationItem,
+      label: "Notificações",
+      icon: Heart,
     },
+    { id: "profile" as NavigationItem, label: "Perfil", icon: User },
   ];
 
   const handleLogout = async () => {
@@ -43,19 +47,19 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemChange }) => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col z-50">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-2">
-          <img src="/OnNewsBr.webp" alt="OnNews" className="h-10 w-auto" />
-          <span className="font-bold text-xl text-primary dark:text-white">
-            On News BR
-          </span>
+      <div className="px-6 py-10 mb-2">
+        <div
+          className="font-serif italic text-2xl font-black text-gray-900 dark:text-white tracking-tight cursor-pointer"
+          onClick={() => onItemChange("feed")}
+        >
+          On News
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 px-3">
         <ul className="space-y-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
@@ -66,14 +70,25 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemChange }) => {
                 <button
                   aria-label={item.label}
                   onClick={() => onItemChange(item.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className={`w-full flex items-center space-x-4 px-3 py-3 rounded-xl transition-all duration-200 group ${
+                    isActive 
+                      ? "bg-gray-100/80 dark:bg-gray-800/80" 
+                      : "hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? "text-white" : ""}`} />
-                  <span className="font-medium">{item.label}</span>
+                  <Icon
+                    className={`w-7 h-7 transition-transform group-hover:scale-105 ${
+                      isActive ? "text-primary dark:text-white" : "text-gray-900 dark:text-white"
+                    }`} 
+                    strokeWidth={isActive ? 2.5 : 1.5}
+                  />
+                  <span
+                    className={`text-base transition-all ${
+                      isActive ? "font-black text-primary dark:text-white" : "font-medium text-gray-900 dark:text-white"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </button>
               </li>
             );
@@ -81,57 +96,30 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemChange }) => {
         </ul>
       </nav>
 
-      {/* User Info & Actions */}
-      {currentUser && (
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white font-medium">
-              {currentUser.photoURL ? (
-                <img
-                  src={currentUser.photoURL}
-                  alt={currentUser.displayName}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                currentUser.displayName?.charAt(0).toUpperCase()
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                {currentUser.displayName}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                @{currentUser.username}
-              </p>
-            </div>
-          </div>
+      {/* Bottom Actions */}
+      <div className="p-3 mb-4 space-y-2">
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center space-x-4 px-3 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group"
+        >
+          {theme === "light" ? (
+            <Moon className="w-7 h-7" strokeWidth={1.5} />
+          ) : (
+            <Sun className="w-7 h-7" strokeWidth={1.5} />
+          )}
+          <span className="text-gray-900 dark:text-white">Mudar aparência</span>
+        </button>
 
-          <div className="flex items-center space-x-2">
-            <button
-              aria-label="theme"
-              onClick={toggleTheme}
-              className="flex-1 flex items-center justify-center space-x-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              {theme === "light" ? (
-                <Moon className="w-4 h-4" />
-              ) : (
-                <Sun className="w-4 h-4" />
-              )}
-              <span className="text-sm">
-                {theme === "light" ? "Escuro" : "Claro"}
-              </span>
-            </button>
-
-            <button
-              aria-label="logout"
-              onClick={handleLogout}
-              className="flex items-center justify-center p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+        {currentUser && (
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-4 px-3 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-red-500"
+          >
+            <LogOut className="w-7 h-7" strokeWidth={1.5} />
+            <span>Sair</span>
+          </button>
+        )}
+      </div>
     </aside>
   );
 };

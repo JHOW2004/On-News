@@ -1,40 +1,139 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Camera,
-  PencilLine,
-  Save,
-  X,
+  Settings,
+  Grid,
+  List,
+  Loader2,
+  User as UserIcon,
+  PlusSquare,
+  LogOut,
   Sun,
   Moon,
-  LogOut,
-  Loader2,
+  X,
+  Save,
+  FileText,
+  Edit,
 } from "lucide-react";
+
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
 import { updateProfile } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, collection, query, where, onSnapshot, getDoc, getDocs, orderBy } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "../../lib/firebase";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { unblockUser } from '../../lib/actions';
+import UserListModal from '../Social/UserListModal';
+import NewsCard from "../News/NewsCard";
+import OpinionCard from "../News/OpinionCard";
+import OpinionPostForm from "../News/OpinionPostForm";
+import NewsFeed from "../News/NewsFeed";
+import { OpinionPost, Like, Comment } from "../../types";
 import toast from "react-hot-toast";
 
-const ProfilePage: React.FC = () => {
+interface ProfilePageProps {
+  onUserClick?: (userId: string) => void;
+  onEditDraft?: (post: OpinionPost) => void;
+  onPostClick?: (post: OpinionPost) => void;
+}
+
+const ProfilePage: React.FC<ProfilePageProps> = ({ onUserClick, onEditDraft, onPostClick }) => {
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"grid" | "list" | "drafts">("grid");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [followers, setFollowers] = useState<string[]>([]);
+  const [following, setFollowing] = useState<string[]>([]);
+  const [userPosts, setUserPosts] = useState<OpinionPost[]>([]);
+  const [activities, setActivities] = useState<Array<{ type: "like" | "comment"; data: any; date: Date }>>([]);
+  const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
+  const [showList, setShowList] = useState<{ type: 'followers' | 'following' | null, userIds: string[] }>({ type: null, userIds: [] });
+  const [showSettings, setShowSettings] = useState(false);
 
   const [editData, setEditData] = useState({
     displayName: currentUser?.displayName || "",
     description: currentUser?.description || "",
   });
 
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Followers
+    const qFollowers = query(collection(db, 'follows'), where('followingId', '==', currentUser.uid));
+    const unsubscribeFollowers = onSnapshot(qFollowers, (snap) => {
+      setFollowers(snap.docs.map(doc => doc.data().followerId));
+    });
+
+    // Following
+    const qFollowing = query(collection(db, 'follows'), where('followerId', '==', currentUser.uid));
+    const unsubscribeFollowing = onSnapshot(qFollowing, (snap) => {
+      setFollowing(snap.docs.map(doc => doc.data().followingId));
+    });
+
+    // Posts
+    const qPosts = query(collection(db, 'opinion_posts'), where('userId', '==', currentUser.uid), orderBy('publishedAt', 'desc'));
+    const unsubscribePosts = onSnapshot(qPosts, (snap) => {
+      setUserPosts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as OpinionPost)));
+    });
+
+    // Blocks
+    const qBlocks = query(collection(db, 'blocks'), where('blockerId', '==', currentUser.uid));
+    const unsubscribeBlocks = onSnapshot(qBlocks, async (snap) => {
+      const blockPromises = snap.docs.map(async (d) => {
+        const userDoc = await getDoc(doc(db, 'users', d.data().blockedId));
+        return { uid: d.data().blockedId, ...userDoc.data() };
+      });
+      const resolvedBlocks = await Promise.all(blockPromises);
+      setBlockedUsers(resolvedBlocks);
+    });
+
+    // Activities (Likes & Comments)
+    const qLikes = query(collection(db, 'likes'), where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+    const unsubscribeLikes = onSnapshot(qLikes, (snap) => {
+      const likes = snap.docs.map(d => ({
+        type: 'like' as const,
+        data: d.data(),
+        date: d.data().createdAt?.toDate() || new Date()
+      }));
+      setActivities(prev => {
+        const nonLikes = prev.filter(a => a.type !== 'like');
+        return [...nonLikes, ...likes].sort((a, b) => b.date.getTime() - a.date.getTime());
+      });
+    });
+
+    const qComments = query(collection(db, 'comments'), where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+    const unsubscribeComments = onSnapshot(qComments, (snap) => {
+      const comments = snap.docs.map(d => ({
+        type: 'comment' as const,
+        data: d.data(),
+        date: d.data().createdAt?.toDate() || new Date()
+      }));
+      setActivities(prev => {
+        const nonComments = prev.filter(a => a.type !== 'comment');
+        return [...nonComments, ...comments].sort((a, b) => b.date.getTime() - a.date.getTime());
+      });
+    });
+
+    return () => {
+      unsubscribeFollowers();
+      unsubscribeFollowing();
+      unsubscribePosts();
+      unsubscribeBlocks();
+      unsubscribeLikes();
+      unsubscribeComments();
+    };
+  }, [currentUser]);
+
   if (!currentUser) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">
-          Você precisa fazer login para ver seu perfil.
-        </p>
+      <div className="text-center py-20">
+        <p className="text-gray-500">Faça login para ver seu perfil.</p>
       </div>
     );
   }
@@ -46,37 +145,16 @@ const ProfilePage: React.FC = () => {
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      // 5MB limit
-      toast.error("A imagem deve ter no máximo 5MB");
-      return;
-    }
-
     setIsUploading(true);
     try {
-      // 1. Upload to Storage
-      const storageRef = ref(
-        storage,
-        `profiles/${currentUser.uid}/${Date.now()}_${file.name}`,
-      );
+      const storageRef = ref(storage, `profiles/${currentUser.uid}/${Date.now()}_${file.name}`);
       await uploadBytes(storageRef, file);
       const photoURL = await getDownloadURL(storageRef);
-
-      // 2. Update Auth Profile
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { photoURL });
-      }
-
-      // 3. Update Firestore User Document
-      const userRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userRef, { photoURL });
-
+      if (auth.currentUser) await updateProfile(auth.currentUser, { photoURL });
+      await updateDoc(doc(db, "users", currentUser.uid), { photoURL });
       window.location.reload();
-      toast.success("Foto de perfil atualizada!");
     } catch (error) {
-      console.error("Erro ao atualizar foto:", error);
-      toast.error("Erro ao atualizar foto de perfil");
+      toast.error("Erro ao atualizar foto");
     } finally {
       setIsUploading(false);
     }
@@ -84,18 +162,11 @@ const ProfilePage: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      const userRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userRef, {
+      await updateDoc(doc(db, "users", currentUser.uid), {
         displayName: editData.displayName,
         description: editData.description,
       });
-
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, {
-          displayName: editData.displayName,
-        });
-      }
-
+      if (auth.currentUser) await updateProfile(auth.currentUser, { displayName: editData.displayName });
       toast.success("Perfil atualizado!");
       setIsEditing(false);
     } catch (error) {
@@ -103,209 +174,271 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success("Logout realizado com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao fazer logout");
-    }
-  };
-
   return (
-    <section className="max-w-2xl mx-auto">
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handlePhotoChange}
-        accept="image/*"
-        className="hidden"
-      />
+    <section className="max-w-4xl mx-auto px-4 py-6 md:py-10">
+      <input type="file" ref={fileInputRef} onChange={handlePhotoChange} accept="image/*" className="hidden" />
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 mb-6">
-        <div className="flex items-center space-x-4">
-          <div
-            className="relative group cursor-pointer"
+      {/* Header Section */}
+      <header className="flex flex-col md:flex-row items-start md:items-center gap-8 md:gap-20 mb-10">
+        {/* Avatar */}
+        <div className="relative shrink-0 mx-auto md:mx-0">
+          <div 
+            className="w-24 h-24 md:w-36 md:h-36 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[3px] cursor-pointer"
             onClick={handlePhotoClick}
           >
-            <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-2xl font-bold overflow-hidden border-2 border-white/50">
-              {isUploading ? (
-                <Loader2 className="w-8 h-8 animate-spin" />
-              ) : currentUser.photoURL ? (
-                <img
-                  src={currentUser.photoURL}
-                  alt={currentUser.displayName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                currentUser.displayName?.charAt(0).toUpperCase()
-              )}
+            <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 p-[3px]">
+              <div className="w-full h-full rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                {isUploading ? (
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                ) : currentUser.photoURL ? (
+                  <img src={currentUser.photoURL} className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-12 h-12 md:w-20 md:h-20 text-gray-300" />
+                )}
+              </div>
             </div>
-            <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="w-6 h-6 text-white" />
+          </div>
+          <button 
+            onClick={handlePhotoClick}
+            className="absolute bottom-1 right-1 md:bottom-3 md:right-3 bg-white dark:bg-gray-700 p-1.5 rounded-full shadow-lg border border-gray-100 dark:border-gray-600"
+          >
+            <Camera className="w-4 h-4 text-gray-900 dark:text-white" />
+          </button>
+        </div>
+
+        {/* User Info & Stats */}
+        <div className="flex-1 w-full space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <h1 className="text-xl font-normal dark:text-white truncate">@{currentUser.username}</h1>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="flex-1 md:flex-none px-4 py-1.5 bg-gray-100 dark:bg-gray-800 text-sm font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Editar perfil
+              </button>
+              <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-1.5 text-gray-900 dark:text-white hover:opacity-70 transition-opacity"
+              >
+                <Settings className="w-6 h-6" />
+              </button>
             </div>
-            <button
-              aria-label="camera"
-              className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary"
+          </div>
+
+          <div className="flex items-center justify-around md:justify-start md:gap-10 py-4 md:py-0 border-y md:border-none border-gray-100 dark:border-gray-800">
+            <div className="text-center md:text-left">
+              <span className="block md:inline font-bold dark:text-white">{userPosts.length}</span>
+              <span className="text-sm text-gray-500 md:ml-1">publicações</span>
+            </div>
+            <button 
+              onClick={() => setShowList({ type: 'followers', userIds: followers })}
+              className="text-center md:text-left hover:opacity-70 transition-opacity"
             >
-              <Camera className="w-4 h-4" />
+              <span className="block md:inline font-bold dark:text-white">{followers.length}</span>
+              <span className="text-sm text-gray-500 md:ml-1">seguidores</span>
+            </button>
+            <button 
+              onClick={() => setShowList({ type: 'following', userIds: following })}
+              className="text-center md:text-left hover:opacity-70 transition-opacity"
+            >
+              <span className="block md:inline font-bold dark:text-white">{following.length}</span>
+              <span className="text-sm text-gray-500 md:ml-1">seguindo</span>
             </button>
           </div>
 
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">
-              {currentUser.displayName}
-            </h1>
-            <p className="text-white/80">@{currentUser.username}</p>
+          <div className="hidden md:block">
+            <p className="font-bold dark:text-white">{currentUser.displayName}</p>
+            <p className="text-sm dark:text-gray-300 whitespace-pre-wrap">{currentUser.description}</p>
           </div>
+        </div>
+      </header>
 
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            aria-label="edit"
-            className="bg-white/20 backdrop-blur-sm p-2 rounded-lg text-white hover:bg-white/30 transition-colors"
+      {/* Bio for Mobile */}
+      <div className="md:hidden mb-10">
+        <p className="font-bold dark:text-white">{currentUser.displayName}</p>
+        <p className="text-sm dark:text-gray-300 whitespace-pre-wrap">{currentUser.description}</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-t border-gray-100 dark:border-gray-800">
+        <div className="flex justify-center gap-8 sm:gap-16 -mt-[1px]">
+          <button 
+            onClick={() => setActiveTab("grid")}
+            className={`flex items-center gap-2 py-4 text-xs font-bold uppercase tracking-widest border-t transition-colors ${activeTab === 'grid' ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white' : 'border-transparent text-gray-400'}`}
           >
-            {isEditing ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <PencilLine className="w-5 h-5" />
-            )}
+            <Grid className="w-3 h-3" />
+            <span className="hidden sm:inline">Publicações</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab("drafts")}
+            className={`flex items-center gap-2 py-4 text-xs font-bold uppercase tracking-widest border-t transition-colors ${activeTab === 'drafts' ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white' : 'border-transparent text-gray-400'}`}
+          >
+            <FileText className="w-3 h-3" />
+            <span className="hidden sm:inline">Rascunhos</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab("list")}
+            className={`flex items-center gap-2 py-4 text-xs font-bold uppercase tracking-widest border-t transition-colors ${activeTab === 'list' ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white' : 'border-transparent text-gray-400'}`}
+          >
+            <List className="w-3 h-3" />
+            <span className="hidden sm:inline">Atividade</span>
           </button>
         </div>
       </div>
 
-      {/* Profile Content */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        {isEditing ? (
+      {/* Content */}
+      <div className="mt-6">
+        {activeTab === "grid" ? (
+          <div className="grid grid-cols-3 gap-1 md:gap-8">
+            {userPosts.map(post => (
+              <div 
+                key={post.id}
+                className={`aspect-square ${post.color} relative group cursor-pointer overflow-hidden rounded-sm md:rounded-lg`}
+              >
+                <div className="absolute inset-0 flex items-center justify-center p-2 text-center text-white opacity-0 group-hover:opacity-100 bg-black/20 backdrop-blur-[2px] transition-all duration-300">
+                  <p className="text-[10px] md:text-sm font-bold line-clamp-3">{post.title}</p>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-white">
+                  <p className="text-[8px] md:text-xs font-black uppercase opacity-20 rotate-12 select-none">OPINIÃO</p>
+                </div>
+              </div>
+            ))}
+            {userPosts.length === 0 && (
+              <div className="col-span-3 py-20 text-center">
+                 <div className="w-16 h-16 border-2 border-gray-900 dark:border-white rounded-full flex items-center justify-center mx-auto mb-4">
+                    <PlusSquare className="w-8 h-8" />
+                 </div>
+                 <p className="text-xl font-bold dark:text-white">Nenhuma publicação ainda</p>
+              </div>
+            )}
+          </div>
+        ) : activeTab === "drafts" ? (
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nome
-              </label>
-              <input
-                type="text"
-                value={editData.displayName}
-                onChange={(e) =>
-                  setEditData((prev) => ({
-                    ...prev,
-                    displayName: e.target.value,
-                  }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Descrição
-              </label>
-              <textarea
-                value={editData.description}
-                onChange={(e) =>
-                  setEditData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                placeholder="Conte um pouco sobre você..."
-              />
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                aria-label="save"
-                onClick={handleSave}
-                className="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center space-x-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>Salvar</span>
-              </button>
-              <button
-                aria-label="cancel"
-                onClick={() => setIsEditing(false)}
-                className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancelar
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <div className="col-span-full">
+                  <p className="text-sm text-gray-500 mb-4 italic">Seus rascunhos salvos aparecem aqui. Clique em um deles para continuar editando.</p>
+               </div>
+               <div className="col-span-full">
+                  <NewsFeed 
+                    userId={currentUser.uid} 
+                    status="draft" 
+                    onUserClick={onUserClick}
+                    onEdit={onEditDraft}
+                    onPostClick={onPostClick}
+                  />
+               </div>
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Info */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Informações
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Email:
-                  </span>
-                  <p className="text-gray-900 dark:text-white">
-                    {currentUser.email}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Nome de usuário:
-                  </span>
-                  <p className="text-gray-900 dark:text-white">
-                    @{currentUser.username}
-                  </p>
-                </div>
-                {currentUser.description && (
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      Descrição:
-                    </span>
-                    <p className="text-gray-900 dark:text-white mt-1">
-                      {currentUser.description}
-                    </p>
-                  </div>
-                )}
-              </div>
+        <div className="space-y-6">
+          {activities.map((item, idx) => (
+            <div key={idx} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
+               <div className="p-3 flex items-center gap-2 text-xs text-gray-500">
+                  {item.type === 'like' ? <Heart className="w-3 h-3 text-red-500 fill-current" /> : <MessageCircle className="w-3 h-3 text-blue-500" />}
+                  <span>{item.type === 'like' ? 'Curtiu' : 'Comentou'} • {formatDistanceToNow(item.date, { addSuffix: true, locale: ptBR })}</span>
+               </div>
+               {item.data.articleSnapshot?.type === 'opinion' ? (
+                 <OpinionCard 
+                    post={item.data.articleSnapshot} 
+                    onUserClick={onUserClick} 
+                    onPostClick={onPostClick}
+                 />
+               ) : (
+                 <NewsCard 
+                    article={item.data.articleSnapshot} 
+                    onUserClick={onUserClick} 
+                    onPostClick={onPostClick}
+                 />
+               )}
             </div>
-
-            {/* Actions */}
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Configurações
-              </h3>
-              <div className="space-y-3">
-                <button
-                  aria-label="theme"
-                  onClick={toggleTheme}
-                  className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    {theme === "light" ? (
-                      <Moon className="w-5 h-5" />
-                    ) : (
-                      <Sun className="w-5 h-5" />
-                    )}
-                    <span className="text-gray-900 dark:text-white">
-                      Tema {theme === "light" ? "Escuro" : "Claro"}
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  aria-label="logout"
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-between p-3 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <LogOut className="w-5 h-5" />
-                    <span>Sair da conta</span>
-                  </div>
-                </button>
-              </div>
+          ))}
+          {activities.length === 0 && (
+            <div className="py-20 text-center text-gray-500 italic">
+              Nenhuma atividade recente encontrada.
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
       </div>
+
+      {/* Settings/Edit Modal Overlays */}
+      {isEditing && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl p-6 space-y-6 shadow-2xl">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold dark:text-white">Editar Perfil</h3>
+              <button onClick={() => setIsEditing(false)}><X className="w-6 h-6 text-gray-400" /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Nome</label>
+                <input 
+                  type="text" 
+                  value={editData.displayName}
+                  onChange={e => setEditData(prev => ({ ...prev, displayName: e.target.value }))}
+                  className="w-full bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border-none focus:ring-2 focus:ring-primary dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Bio</label>
+                <textarea 
+                  rows={4}
+                  value={editData.description}
+                  onChange={e => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border-none focus:ring-2 focus:ring-primary dark:text-white resize-none"
+                />
+              </div>
+            </div>
+            <button 
+              onClick={handleSave}
+              className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="w-5 h-5" /> Salvar Alterações
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Overlay */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-xs rounded-2xl overflow-hidden shadow-2xl divide-y dark:divide-gray-800">
+            <button 
+              onClick={() => {
+                toggleTheme();
+                setShowSettings(false);
+              }} 
+              className="w-full py-4 text-sm font-bold dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Mudar Tema ({theme === 'light' ? 'Escuro' : 'Claro'})
+            </button>
+            <button 
+              onClick={() => {
+                setShowList({ type: 'followers', userIds: followers });
+                setShowSettings(false);
+              }} 
+              className="w-full py-4 text-sm dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Gerenciar Seguidores
+            </button>
+            <button onClick={logout} className="w-full py-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+              Sair da Conta
+            </button>
+            <button onClick={() => setShowSettings(false)} className="w-full py-4 text-sm dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <UserListModal 
+        isOpen={showList.type !== null}
+        onClose={() => setShowList({ type: null, userIds: [] })}
+        title={showList.type === 'followers' ? 'Seguidores' : 'Seguindo'}
+        userIds={showList.userIds}
+        onUserClick={onUserClick!}
+      />
     </section>
   );
 };
