@@ -135,7 +135,6 @@ export const useNewsInteractions = (article: NewsArticle | OpinionPost) => {
         read: false,
         createdAt: serverTimestamp()
       });
-      });
     } catch (error) {
       console.error('Error creating notification:', error);
     }
