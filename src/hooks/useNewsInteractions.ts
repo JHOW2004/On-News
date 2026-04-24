@@ -135,6 +135,32 @@ export const useNewsInteractions = (article: NewsArticle | OpinionPost) => {
         read: false,
         createdAt: serverTimestamp()
       });
+
+      // Enviar Push Notification em tempo real
+      let title = 'Nova interação!';
+      let body = 'Alguém interagiu com você.';
+      
+      if (type === 'like') {
+        title = '❤️ Nova curtida!';
+        body = `${currentUser.username} curtiu seu post: "${article.title}"`;
+      } else if (type === 'comment') {
+        title = '💬 Novo comentário!';
+        body = `${currentUser.username} comentou no seu post.`;
+      } else if (type === 'reply') {
+        title = '↩️ Nova resposta!';
+        body = `${currentUser.username} respondeu seu comentário.`;
+      }
+
+      await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toUserId,
+          title,
+          body,
+          url: `/post/${article.id}`
+        })
+      }).catch(err => console.error('Error triggering real-time push:', err));
     } catch (error) {
       console.error('Error creating notification:', error);
     }
