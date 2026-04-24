@@ -14,6 +14,8 @@ import {
   Save,
   FileText,
   Edit,
+  Heart,
+  MessageCircle,
 } from "lucide-react";
 
 import { formatDistanceToNow } from "date-fns";
