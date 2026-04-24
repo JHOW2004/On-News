@@ -20,7 +20,6 @@ import LoginModal from "./components/Auth/LoginModal";
 import { NavigationItem, OpinionPost } from "./types";
 import { db } from "./lib/firebase";
 import { subscribeToNotifications } from "./lib/notifications";
-import { usePushNotifications } from "./hooks/usePushNotifications";
 
 const AppContent: React.FC = () => {
   const [activeItem, setActiveItem] = useState<NavigationItem>("feed");
@@ -76,7 +75,6 @@ const AppContent: React.FC = () => {
     setActiveItem("create-post");
   };
 
-  usePushNotifications();
 
   useEffect(() => {
     if (currentUser) {
