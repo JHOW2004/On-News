@@ -237,8 +237,8 @@ const AppContent: React.FC = () => {
         </div>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 pb-20 md:pb-0 md:pl-64">
-          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
+        <main className="flex-1 min-w-0 pb-24 md:pb-0 md:pl-64">
+          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10 pb-32 md:pb-10">
             {/* Page Header (Categories) */}
             {(selectedCategory || activeItem === "categories") &&
               !viewingUserId && (
