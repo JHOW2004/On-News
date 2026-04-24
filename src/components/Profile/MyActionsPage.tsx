@@ -276,6 +276,9 @@ const MyActionsPage: React.FC<MyActionsPageProps> = ({ onUserClick }) => {
         </div>
       ) : renderContent()}
       
+      {/* Bottom spacer for mobile navigation */}
+      <div className="h-28 md:hidden" />
+
       <LoginModal 
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}

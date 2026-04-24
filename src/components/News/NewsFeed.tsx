@@ -241,6 +241,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick,
         </>
       )}
 
+      {/* Bottom spacer for mobile navigation */}
+      <div className="h-28 md:hidden" />
+
       <LoginModal 
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}

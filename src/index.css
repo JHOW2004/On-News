@@ -18,7 +18,7 @@
 
 html, body {
   @apply overflow-x-hidden w-full max-w-full m-0 p-0;
-  min-width: 340px;
+  min-width: 310px;
   -webkit-overflow-scrolling: touch;
 }
 
