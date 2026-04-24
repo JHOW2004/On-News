@@ -158,8 +158,9 @@ const MyActionsPage: React.FC<MyActionsPageProps> = ({ onUserClick }) => {
                     {n.type === 'like' && 'curtiu seu artigo'}
                     {n.type === 'comment' && 'comentou no seu artigo'}
                     {n.type === 'reply' && 'respondeu seu comentário'}
+                    {n.type === 'follow' && 'começou a seguir você'}
                     {n.type === 'system' && 'enviou uma mensagem'}
-                    <span className="font-medium text-primary"> "{n.articleTitle}"</span>
+                    {n.articleTitle && <span className="font-medium text-primary"> "{n.articleTitle}"</span>}
                   </p>
                   {n.commentContent && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic border-l-2 border-gray-200 dark:border-gray-700 pl-2">

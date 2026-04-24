@@ -11,6 +11,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { sendNotification } from '../lib/notifications';
 import { useAuth } from '../contexts/AuthContext';
 import { Comment, Like, ArticleInteraction, OpinionPost, Notification } from '../types';
 import { NewsArticle } from '../lib/gnews';
@@ -120,24 +121,18 @@ export const useNewsInteractions = (article: NewsArticle | OpinionPost) => {
   };
 
   const createNotification = async (type: 'like' | 'comment' | 'reply', toUserId: string, commentContent?: string) => {
-    if (!currentUser || currentUser.uid === toUserId) return;
-
-    try {
-      await addDoc(collection(db, 'notifications'), {
-        toUserId,
-        fromUserId: currentUser.uid,
-        fromUserName: currentUser.username,
-        fromUserPhoto: currentUser.photoURL || '',
-        type,
-        articleId: article.id,
-        articleTitle: article.title,
-        commentContent,
-        read: false,
-        createdAt: serverTimestamp()
-      });
-    } catch (error) {
-      console.error('Error creating notification:', error);
-    }
+    if (!currentUser) return;
+    
+    await sendNotification({
+      toUserId,
+      fromUserId: currentUser.uid,
+      fromUserName: currentUser.username,
+      fromUserPhoto: currentUser.photoURL || '',
+      type,
+      articleId: article.id,
+      articleTitle: article.title,
+      commentContent
+    });
   };
 
   const addComment = async (content: string, parentCommentId?: string) => {
@@ -165,8 +160,13 @@ export const useNewsInteractions = (article: NewsArticle | OpinionPost) => {
         await createNotification('comment', (article as OpinionPost).userId, content);
       }
       
-      // If it's a reply, we should ideally notify the parent comment owner too
-      // For now, let's keep it simple
+      // If it's a reply, notify the owner of the parent comment
+      if (parentCommentId) {
+        const parentComment = interactions.comments.find(c => c.id === parentCommentId);
+        if (parentComment && parentComment.userId !== currentUser.uid) {
+          await createNotification('reply', parentComment.userId, content);
+        }
+      }
 
       toast.success('Comentário adicionado!');
     } catch (error) {

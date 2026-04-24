@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { followUser, unfollowUser } from '../../lib/actions';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { sendNotification } from '../../lib/notifications';
 import toast from 'react-hot-toast';
 
 interface FollowButtonProps {
@@ -43,6 +44,16 @@ const FollowButton: React.FC<FollowButtonProps> = ({ userId, onLoginRequired, cl
         await unfollowUser(currentUser.uid, userId);
       } else {
         await followUser(currentUser.uid, userId);
+        
+        // Send notification
+        await sendNotification({
+          toUserId: userId,
+          fromUserId: currentUser.uid,
+          fromUserName: currentUser.username,
+          fromUserPhoto: currentUser.photoURL || '',
+          type: 'follow'
+        });
+
         toast.success('Agora você está seguindo!');
       }
     } catch (error) {

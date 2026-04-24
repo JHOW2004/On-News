@@ -81,9 +81,9 @@ export interface Notification {
   fromUserId: string;
   fromUserName: string;
   fromUserPhoto?: string;
-  type: 'like' | 'comment' | 'reply' | 'system';
-  articleId: string;
-  articleTitle: string;
+  type: 'like' | 'comment' | 'reply' | 'follow' | 'system';
+  articleId?: string;
+  articleTitle?: string;
   commentContent?: string;
   read: boolean;
   createdAt: Date;
