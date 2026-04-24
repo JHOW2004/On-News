@@ -47,7 +47,7 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, onClose, onUserClick }) =
         {/* Content */}
         <div className="flex-1 p-6 space-y-6">
           <div 
-            className="aspect-[4/3] w-full rounded-2xl p-8 flex flex-col justify-end shadow-2xl relative overflow-hidden"
+            className="w-full min-h-[320px] md:min-h-[400px] rounded-2xl p-8 pt-20 flex flex-col justify-end shadow-2xl relative overflow-hidden"
             style={{ 
               background: `linear-gradient(135deg, ${post.cardColor || '#10b981'} 0%, ${post.cardColor || '#10b981'}dd 100%)` 
             }}

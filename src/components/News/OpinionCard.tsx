@@ -95,7 +95,7 @@ const OpinionCard: React.FC<OpinionCardProps> = ({ post, onLoginRequired, onUser
       {/* Card Preview */}
       <div 
         onClick={() => onPostClick?.(post)}
-        className="aspect-[4/3] w-full rounded-2xl p-6 flex flex-col justify-end shadow-lg relative overflow-hidden cursor-pointer group"
+        className="w-full min-h-[280px] h-auto rounded-2xl p-6 pt-16 flex flex-col justify-end shadow-lg relative overflow-hidden cursor-pointer group"
         style={{ 
           background: `linear-gradient(135deg, ${post.cardColor || '#10b981'} 0%, ${post.cardColor || '#10b981'}dd 100%)` 
         }}
