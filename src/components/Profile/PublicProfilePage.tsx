@@ -26,6 +26,7 @@ interface PublicProfilePageProps {
   onBack: () => void;
   onUserClick: (id: string) => void;
   onLoginRequired: () => void;
+  onPostClick?: (post: OpinionPost) => void;
 }
 
 const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
@@ -33,6 +34,7 @@ const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
   onBack,
   onUserClick,
   onLoginRequired,
+  onPostClick,
 }) => {
   const { currentUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
@@ -70,7 +72,12 @@ const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
           getDoc(doc(db, "users", userId)),
           getDocs(query(collection(db, 'follows'), where('followingId', '==', userId))),
           getDocs(query(collection(db, 'follows'), where('followerId', '==', userId))),
-          getDocs(query(collection(db, 'opinion_posts'), where('userId', '==', userId), orderBy('publishedAt', 'desc')))
+          getDocs(query(
+            collection(db, 'opinionPosts'), 
+            where('userId', '==', userId), 
+            where('status', '==', 'published'),
+            orderBy('publishedAt', 'desc')
+          ))
         ]);
 
         if (userDoc.exists()) setUser(userDoc.data() as User);
@@ -119,6 +126,32 @@ const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
         toast.success("Usuário bloqueado");
         onBack();
     }
+  };
+  
+  const renderDescription = (text: string) => {
+    if (!text) return null;
+    const urlRegex = /((?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z0-9-]{2,}[^\s]*)/gi;
+    const parts = text.split(urlRegex);
+    return parts.map((part, i) => {
+      if (part.match(urlRegex)) {
+        let href = part;
+        if (!href.match(/^https?:\/\//i)) {
+          href = `https://${href}`;
+        }
+        return (
+          <a 
+            key={i} 
+            href={href} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary dark:text-white font-medium hover:underline break-all"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
   };
 
   return (
@@ -175,14 +208,14 @@ const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
 
           <div className="hidden md:block">
             <p className="font-bold dark:text-white">{user.displayName}</p>
-            <p className="text-sm dark:text-gray-300 whitespace-pre-wrap">{user.description}</p>
+            <div className="text-sm dark:text-gray-300 whitespace-pre-wrap">{renderDescription(user.description)}</div>
           </div>
         </div>
       </header>
 
       <div className="md:hidden mb-10">
         <p className="font-bold dark:text-white">{user.displayName}</p>
-        <p className="text-sm dark:text-gray-300 whitespace-pre-wrap">{user.description}</p>
+        <div className="text-sm dark:text-gray-300 whitespace-pre-wrap">{renderDescription(user.description)}</div>
       </div>
 
       <div className="border-t border-gray-100 dark:border-gray-800">
@@ -199,9 +232,13 @@ const PublicProfilePage: React.FC<PublicProfilePageProps> = ({
       {activeTab === "grid" ? (
         <div className="grid grid-cols-3 gap-1 md:gap-8">
           {userPosts.map(post => (
-            <div key={post.id} className={`aspect-square ${post.color} relative group cursor-pointer overflow-hidden rounded-sm md:rounded-lg`}>
-              <div className="absolute inset-0 flex items-center justify-center p-2 text-center text-white opacity-0 group-hover:opacity-100 bg-black/20 backdrop-blur-[2px] transition-all duration-300">
-                <p className="text-[10px] md:text-sm font-bold line-clamp-3">{post.title}</p>
+            <div 
+              key={post.id} 
+              onClick={() => onPostClick?.(post)}
+              className={`aspect-square ${post.color} relative group cursor-pointer overflow-hidden rounded-sm md:rounded-lg`}
+            >
+              <div className="absolute inset-0 flex items-center justify-center p-2 text-center text-white bg-black/20 backdrop-blur-[1px]">
+                <p className="text-[10px] md:text-sm font-bold line-clamp-4 px-1">{post.title}</p>
               </div>
             </div>
           ))}

@@ -8,7 +8,7 @@ import {
   updateProfile,
   sendPasswordResetEmail
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { User } from '../types';
 
@@ -90,27 +90,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeUser: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       setFirebaseUser(firebaseUser);
       
+      if (unsubscribeUser) {
+        unsubscribeUser();
+        unsubscribeUser = null;
+      }
+
       if (firebaseUser) {
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          setCurrentUser({
-            ...userData,
-            createdAt: userData.createdAt instanceof Date ? userData.createdAt : new Date(userData.createdAt)
-          });
-        }
+        unsubscribeUser = onSnapshot(doc(db, 'users', firebaseUser.uid), (doc) => {
+          if (doc.exists()) {
+            const userData = doc.data() as User;
+            setCurrentUser({
+              ...userData,
+              createdAt: userData.createdAt instanceof Date ? userData.createdAt : (typeof (userData.createdAt as any)?.toDate === 'function' ? (userData.createdAt as any).toDate() : new Date(userData.createdAt))
+            });
+          }
+          setLoading(false);
+        });
       } else {
         setCurrentUser(null);
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUser) unsubscribeUser();
+    };
   }, []);
 
   const value: AuthContextType = {

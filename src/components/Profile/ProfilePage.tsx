@@ -79,7 +79,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onUserClick, onEditDraft, onP
     });
 
     // Posts
-    const qPosts = query(collection(db, 'opinion_posts'), where('userId', '==', currentUser.uid), orderBy('publishedAt', 'desc'));
+    const qPosts = query(
+      collection(db, 'opinionPosts'), 
+      where('userId', '==', currentUser.uid), 
+      where('status', '==', 'published'),
+      orderBy('publishedAt', 'desc')
+    );
     const unsubscribePosts = onSnapshot(qPosts, (snap) => {
       setUserPosts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as OpinionPost)));
     });
@@ -176,6 +181,33 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onUserClick, onEditDraft, onP
     }
   };
 
+  const renderDescription = (text: string) => {
+    if (!text) return null;
+    // Regex identifies links with http, www, or just domains
+    const urlRegex = /((?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z0-9-]{2,}[^\s]*)/gi;
+    const parts = text.split(urlRegex);
+    return parts.map((part, i) => {
+      if (part.match(urlRegex)) {
+        let href = part;
+        if (!href.match(/^https?:\/\//i)) {
+          href = `https://${href}`;
+        }
+        return (
+          <a 
+            key={i} 
+            href={href} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary dark:text-white font-medium hover:underline break-all"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <section className="max-w-4xl mx-auto px-4 py-6 md:py-10">
       <input type="file" ref={fileInputRef} onChange={handlePhotoChange} accept="image/*" className="hidden" />
@@ -251,7 +283,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onUserClick, onEditDraft, onP
 
           <div className="hidden md:block">
             <p className="font-bold dark:text-white">{currentUser.displayName}</p>
-            <p className="text-sm dark:text-gray-300 whitespace-pre-wrap">{currentUser.description}</p>
+            <div className="text-sm dark:text-gray-300 whitespace-pre-wrap">{renderDescription(currentUser.description)}</div>
           </div>
         </div>
       </header>
@@ -259,7 +291,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onUserClick, onEditDraft, onP
       {/* Bio for Mobile */}
       <div className="md:hidden mb-10">
         <p className="font-bold dark:text-white">{currentUser.displayName}</p>
-        <p className="text-sm dark:text-gray-300 whitespace-pre-wrap">{currentUser.description}</p>
+        <div className="text-sm dark:text-gray-300 whitespace-pre-wrap">{renderDescription(currentUser.description)}</div>
       </div>
 
       {/* Tabs */}
@@ -296,13 +328,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onUserClick, onEditDraft, onP
             {userPosts.map(post => (
               <div 
                 key={post.id}
+                onClick={() => onPostClick?.(post)}
                 className={`aspect-square ${post.color} relative group cursor-pointer overflow-hidden rounded-sm md:rounded-lg`}
               >
-                <div className="absolute inset-0 flex items-center justify-center p-2 text-center text-white opacity-0 group-hover:opacity-100 bg-black/20 backdrop-blur-[2px] transition-all duration-300">
-                  <p className="text-[10px] md:text-sm font-bold line-clamp-3">{post.title}</p>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-white">
-                  <p className="text-[8px] md:text-xs font-black uppercase opacity-20 rotate-12 select-none">OPINIÃO</p>
+                <div className="absolute inset-0 flex items-center justify-center p-2 text-center text-white bg-black/20 backdrop-blur-[1px]">
+                  <p className="text-[10px] md:text-sm font-bold line-clamp-4 px-1">{post.title}</p>
                 </div>
               </div>
             ))}

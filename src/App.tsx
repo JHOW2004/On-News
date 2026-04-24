@@ -133,6 +133,7 @@ const AppContent: React.FC = () => {
           }}
           onUserClick={handleUserClick}
           onLoginRequired={() => setShowLoginModal(true)}
+          onPostClick={handlePostClick}
         />
       );
     }
