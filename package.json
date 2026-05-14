@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,6 +11,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "postbuild": "react-snap"
+  },
+  "reactSnap": {
+    "source": "dist"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
