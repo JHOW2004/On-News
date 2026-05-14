@@ -2,7 +2,7 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import prerender from "vite-plugin-prerender";
+import vitePrerender from "vite-prerender-plugin";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
 
-      prerender({
+      vitePrerender({
         staticDir: "dist",
         routes: ["/"],
       }),
@@ -113,11 +113,7 @@ Conteúdo: "${content}"
       VitePWA({
         registerType: "autoUpdate",
 
-        includeAssets: [
-          "favicon.ico",
-          "apple-touch-icon.png",
-          "mask-icon.svg",
-        ],
+        includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
 
         workbox: {
           cleanupOutdatedCaches: true,
@@ -126,10 +122,7 @@ Conteúdo: "${content}"
 
           skipWaiting: true,
 
-          navigateFallbackDenylist: [
-            /^\/sitemap\.xml$/,
-            /^\/robots\.txt$/,
-          ],
+          navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/],
 
           runtimeCaching: [
             {
@@ -155,8 +148,7 @@ Conteúdo: "${content}"
             },
 
             {
-              urlPattern: ({ request }) =>
-                request.destination === "image",
+              urlPattern: ({ request }) => request.destination === "image",
 
               handler: "CacheFirst",
 
@@ -178,8 +170,7 @@ Conteúdo: "${content}"
 
           short_name: "OnNews",
 
-          description:
-            "A rede social de notícias mais completa do Brasil.",
+          description: "A rede social de notícias mais completa do Brasil.",
 
           theme_color: "#000000",
 
@@ -227,17 +218,9 @@ Conteúdo: "${content}"
       rollupOptions: {
         output: {
           manualChunks: {
-            firebase: [
-              "firebase/app",
-              "firebase/auth",
-              "firebase/firestore",
-            ],
+            firebase: ["firebase/app", "firebase/auth", "firebase/firestore"],
 
-            react: [
-              "react",
-              "react-dom",
-              "react-router-dom",
-            ],
+            react: ["react", "react-dom", "react-router-dom"],
           },
         },
       },
