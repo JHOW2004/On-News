@@ -36,16 +36,14 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick,
   const fetchNews = useCallback(async () => {
     setLoading(true);
     try {
-      let newsResponse: { articles: NewsArticle[] } = { articles: [] };
-      
       // Don't fetch GNews if we are looking for a specific user's posts
       if (!userId) {
         if (searchQuery) {
-          newsResponse = await GNewsService.searchNews(searchQuery);
+          await GNewsService.searchNews(searchQuery);
         } else if (category) {
-          newsResponse = await GNewsService.getCategoryNews(category);
+          await GNewsService.getCategoryNews(category);
         } else {
-          newsResponse = await GNewsService.getFeedNews();
+          await GNewsService.getFeedNews();
         }
       }
 
@@ -165,13 +163,50 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick,
     };
   }, [displayedArticles.length, loadingMore, loadMoreArticles]);
 
+  const renderSkeletonCards = () => (
+    <div className="grid gap-6 w-full max-w-full overflow-hidden px-1">
+      {[1, 2, 3].map((i) => (
+        <article key={`skeleton-${i}`} className="bg-white dark:bg-gray-900 border-b md:border md:rounded-xl border-gray-100 dark:border-gray-800 mb-2 md:mb-6 overflow-hidden animate-pulse">
+          {/* Header */}
+          <div className="flex items-center justify-between p-3">
+            <div className="flex items-center space-x-3 w-full">
+              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex-shrink-0" />
+              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/3" />
+            </div>
+          </div>
+
+          {/* Image */}
+          <div className="aspect-video md:aspect-square w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-gray-300 dark:text-gray-700" />
+          </div>
+
+          {/* Action Bar */}
+          <div className="p-3 space-y-3">
+            <div className="flex space-x-4">
+              <div className="w-7 h-7 rounded bg-gray-200 dark:bg-gray-800" />
+              <div className="w-7 h-7 rounded bg-gray-200 dark:bg-gray-800" />
+              <div className="w-7 h-7 rounded bg-gray-200 dark:bg-gray-800" />
+            </div>
+            <div className="space-y-2 pt-1">
+              <div className="h-5 bg-gray-200 dark:bg-gray-800 rounded w-full" />
+              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6" />
+              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-2/3" />
+            </div>
+          </div>
+
+          {/* Footer Button */}
+          <div className="px-3 pb-3">
+            <div className="h-9 bg-gray-200 dark:bg-gray-800 rounded-lg w-full" />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+
   if (loading) {
     return (
-      <section className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-          <p className="text-gray-600 dark:text-gray-400">Carregando feed...</p>
-        </div>
+      <section className="space-y-6">
+        {renderSkeletonCards()}
       </section>
     );
   }
@@ -181,10 +216,13 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ category, searchQuery, onUserClick,
   return (
     <section className="space-y-6">
       {displayedArticles.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">
-            {searchQuery ? 'Nenhuma publicação encontrada para sua pesquisa.' : 'Nenhuma publicação disponível no momento.'}
-          </p>
+        <div className="space-y-6">
+          <div className="text-center py-6">
+            <p className="text-gray-500 dark:text-gray-400 font-medium">
+              {searchQuery ? 'Nenhuma publicação encontrada para sua pesquisa.' : 'Carregando as últimas notícias em tempo real...'}
+            </p>
+          </div>
+          {!searchQuery && renderSkeletonCards()}
         </div>
       ) : (
         <>
