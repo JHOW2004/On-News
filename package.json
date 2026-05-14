@@ -9,14 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "postbuild": "react-snap"
+    "postbuild": "react-snap --config=react-snap.config.js"
   },
   "reactSnap": {
-    "source": "dist",
-    "puppeteerArgs": [
-      "--no-sandbox",
-      "--disable-setuid-sandbox"
-    ]
+    "source": "dist"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
