@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { X, Heart, MessageCircle, Share, Bookmark, Calendar, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -15,8 +16,36 @@ interface PostDetailProps {
 const PostDetail: React.FC<PostDetailProps> = ({ post, onClose, onUserClick }) => {
   const { interactions, isLiked, addComment, toggleLike, shareArticle } = useNewsInteractions(post);
 
+  const postUrl = `https://on-news-br.jhowtech.com.br/post/${post.id}`;
+  const description = post.content.replace(/\s+/g, ' ').trim().slice(0, 160);
+  const publishedAt = post.publishedAt instanceof Date ? post.publishedAt :
+    (post.publishedAt as any)?.toDate?.() || new Date(post.publishedAt);
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm md:p-4">
+      <Helmet>
+        <title>{post.title} | On News BR</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={postUrl} />
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={post.title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={postUrl} />
+        <meta property="article:published_time" content={publishedAt.toISOString()} />
+        <meta name="twitter:title" content={post.title} />
+        <meta name="twitter:description" content={description} />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: post.title,
+            description,
+            datePublished: publishedAt.toISOString(),
+            author: { "@type": "Person", name: post.authorName || post.userName },
+            mainEntityOfPage: postUrl,
+          })}
+        </script>
+      </Helmet>
       <div className="bg-white dark:bg-gray-900 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-3xl md:rounded-2xl overflow-y-auto flex flex-col relative">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-4 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">

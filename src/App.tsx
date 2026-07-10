@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
+import { Helmet } from "react-helmet-async";
 import { Bell, Activity, Plus, PlusSquare, Heart } from "lucide-react";
 
 import { AuthProvider } from "./contexts/AuthContext";
@@ -199,6 +200,22 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="h-screen w-full max-w-full bg-white dark:bg-gray-900 transition-colors flex flex-col overflow-hidden">
+      {/* Default meta tags (home). Overridden by nested <Helmet> on pages with their own URL, e.g. PostDetail. */}
+      <Helmet>
+        <title>On News BR | Portal de Notícias e Rede Social</title>
+        <meta
+          name="description"
+          content="Acompanhe as últimas notícias do Brasil em tempo real no On News BR. Atualizações sobre política, economia, esportes e tecnologia. Crie seu perfil e participe das discussões."
+        />
+        <link rel="canonical" href="https://on-news-br.jhowtech.com.br/" />
+        <meta property="og:title" content="On News BR | Conecte-se com a informação" />
+        <meta
+          property="og:description"
+          content="Descubra o que está acontecendo no mundo agora. Leia, curta e debata as notícias mais importantes do dia no On News BR."
+        />
+        <meta property="og:url" content="https://on-news-br.jhowtech.com.br/" />
+      </Helmet>
+
       {/* Mobile Header (Instagram Style) */}
       <header className="md:hidden glass border-b border-gray-100 dark:border-gray-800 w-full overflow-hidden flex-shrink-0">
         <div className="flex items-center justify-between px-4 h-14 w-full">
